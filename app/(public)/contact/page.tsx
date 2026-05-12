@@ -96,7 +96,7 @@ export default function ContactPage() {
                 <span className="font-semibold text-gray-900 text-sm">Partnerships & Collaborations</span>
               </div>
               <p className="text-xs text-gray-500 mb-3">Interested in partnering with StarzLink? Let's build something impactful together.</p>
-              <button className="border border-[#1a3c8f] text-[#1a3c8f] font-medium text-sm px-4 py-2 rounded-lg hover:bg-[#1a3c8f] hover:text-white transition-colors">Partner With Us</button>
+              <Link href="/partner" className="inline-block border border-[#1a3c8f] text-[#1a3c8f] font-medium text-sm px-4 py-2 rounded-lg hover:bg-[#1a3c8f] hover:text-white transition-colors">Partner With Us</Link>
             </div>
           </div>
 
@@ -191,12 +191,16 @@ export default function ContactPage() {
 
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Find Us</h2>
-            <div className="bg-gray-100 rounded-2xl h-56 flex items-center justify-center mb-3 overflow-hidden">
-              <div className="text-center text-gray-400">
-                <MapPin className="w-12 h-12 mx-auto mb-2" />
-                <p className="text-sm">Map View</p>
-                <p className="text-xs">Monrovia, Liberia</p>
-              </div>
+            <div className="rounded-2xl overflow-hidden mb-3 border border-gray-100 shadow-sm" style={{ height: 280 }}>
+              <iframe
+                title="Monrovia Liberia Map"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=-10.8988,6.2228,-10.7588,6.3828&layer=mapnik&marker=6.3028,-10.7969"
+                allowFullScreen
+              />
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center justify-between">
               <div>

@@ -8,6 +8,7 @@ import { campusApi } from "@/lib/api";
 import { CampusUpdate } from "@/types";
 import { formatDate, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import AuthGate from "@/components/ui/AuthGate";
 
 const catColors: Record<string, string> = {
   news: "bg-blue-100 text-blue-700", events: "bg-purple-100 text-purple-700",
@@ -35,7 +36,18 @@ export default function CampusUpdateDetailPage() {
   if (loading) return <div className="max-w-3xl mx-auto px-4 py-12 animate-pulse"><div className="h-8 bg-gray-200 rounded mb-4 w-3/4" /><div className="h-64 bg-gray-100 rounded mt-6" /></div>;
   if (!item) return <div className="text-center py-20"><h2 className="text-2xl font-bold mb-2">Not found</h2><Link href="/campus-updates" className="text-[#1a3c8f] hover:underline">← Back</Link></div>;
 
+  const heroPreview = (
+    <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
+      <div className="max-w-3xl mx-auto">
+        <Link href="/campus-updates" className="flex items-center gap-1 text-blue-300 text-sm mb-4 hover:text-white"><ChevronLeft className="w-4 h-4" /> Back to Campus Updates</Link>
+        <h1 className="text-2xl font-extrabold">{item.title}</h1>
+        <p className="text-blue-200">{item.institution}</p>
+      </div>
+    </div>
+  );
+
   return (
+    <AuthGate preview={heroPreview}>
     <div>
       {item.image_url && <div className="h-72 overflow-hidden"><img src={item.image_url} alt={item.title} className="w-full h-full object-cover" /></div>}
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
@@ -73,5 +85,6 @@ export default function CampusUpdateDetailPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

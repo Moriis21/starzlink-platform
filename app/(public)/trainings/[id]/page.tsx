@@ -8,6 +8,7 @@ import { trainingsApi } from "@/lib/api";
 import { Training } from "@/types";
 import { formatDate, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import AuthGate from "@/components/ui/AuthGate";
 
 export default function TrainingDetailPage() {
   const { id } = useParams();
@@ -29,7 +30,18 @@ export default function TrainingDetailPage() {
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-12 animate-pulse"><div className="h-8 bg-gray-200 rounded mb-4 w-3/4" /><div className="h-64 bg-gray-100 rounded mt-6" /></div>;
   if (!item) return <div className="text-center py-20"><h2 className="text-2xl font-bold mb-2">Not found</h2><Link href="/trainings" className="text-[#1a3c8f] hover:underline">← Back to Trainings</Link></div>;
 
+  const heroPreview = (
+    <div className="bg-gradient-to-r from-[#92400e] to-[#d97706] py-10 px-4 text-white">
+      <div className="max-w-4xl mx-auto">
+        <Link href="/trainings" className="flex items-center gap-1 text-yellow-200 text-sm mb-4 hover:text-white"><ChevronLeft className="w-4 h-4" /> Back to Trainings</Link>
+        <h1 className="text-2xl font-extrabold">{item.title}</h1>
+        <p className="text-yellow-200">{item.provider}</p>
+      </div>
+    </div>
+  );
+
   return (
+    <AuthGate preview={heroPreview}>
     <div>
       <div className="bg-gradient-to-r from-[#92400e] to-[#d97706] py-10 px-4 text-white">
         <div className="max-w-4xl mx-auto">
@@ -106,5 +118,6 @@ export default function TrainingDetailPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

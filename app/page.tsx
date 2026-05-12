@@ -8,6 +8,7 @@ import {
   BadgeCheck, Heart, Play, CheckCircle
 } from "lucide-react";
 import { jobsApi, scholarshipsApi, trainingsApi, campusApi, newsletterApi } from "@/lib/api";
+import { insforge } from "@/lib/insforge";
 import { Job, Scholarship, Training, CampusUpdate } from "@/types";
 import { formatDate } from "@/lib/utils";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
@@ -38,31 +39,47 @@ const whyJoin = [
   { icon: Heart, title: "Community Support", desc: "A supportive community that inspires success.", color: "bg-rose-100 text-rose-700" },
 ];
 
+interface Partner { id: string; name: string; abbreviation: string; color: string; logo_url?: string; location?: string; }
+
 export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [updates, setUpdates] = useState<CampusUpdate[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [campusTicker, setCampusTicker] = useState<CampusUpdate[]>([]);
+  const [tickerIdx, setTickerIdx] = useState(0);
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [j, s, t, u] = await Promise.allSettled([
+        const [j, s, t, u, p, cu] = await Promise.allSettled([
           jobsApi.getAll({ limit: "3", status: "active" }),
           scholarshipsApi.getAll({ limit: "3", status: "active" }),
           trainingsApi.getAll({ limit: "3", status: "active" }),
           campusApi.getAll({ limit: "3" }),
+          insforge.database.from("partners").select("id,name,abbreviation,color,logo_url,location").eq("is_active", true).limit(20),
+          campusApi.getAll({ limit: "8" }),
         ]);
         if (j.status === "fulfilled") setJobs(j.value.data?.data || []);
         if (s.status === "fulfilled") setScholarships(s.value.data?.data || []);
         if (t.status === "fulfilled") setTrainings(t.value.data?.data || []);
         if (u.status === "fulfilled") setUpdates(u.value.data?.data || []);
+        if (p.status === "fulfilled") setPartners((p.value as any).data ?? []);
+        if (cu.status === "fulfilled") setCampusTicker(cu.value.data?.data || []);
       } catch {}
     };
     fetchAll();
   }, []);
+
+  // Cycle campus ticker every 4s
+  useEffect(() => {
+    if (campusTicker.length === 0) return;
+    const t = setInterval(() => setTickerIdx(i => (i + 1) % campusTicker.length), 4000);
+    return () => clearInterval(t);
+  }, [campusTicker.length]);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,6 +404,99 @@ export default function HomePage() {
             </form>
           </div>
         </section>
+
+        {/* ── Campus Updates Ticker ─────────────────────────────────────────── */}
+        {campusTicker.length > 0 && (
+          <section className="py-12 px-4 bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f]">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-1">LATEST FROM CAMPUS</p>
+                  <h2 className="text-2xl font-extrabold text-white">Campus Updates</h2>
+                </div>
+                <Link href="/campus-updates" className="text-sm text-blue-300 hover:text-white font-semibold flex items-center gap-1">
+                  View All <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              {/* Flipping card */}
+              <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 min-h-[120px]">
+                {campusTicker.map((u, i) => (
+                  <motion.div
+                    key={u.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: i === tickerIdx ? 1 : 0, y: i === tickerIdx ? 0 : 20 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute inset-0 p-6 flex items-start gap-4"
+                  >
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Megaphone className="w-5 h-5 text-yellow-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-bold text-blue-300 uppercase tracking-wide">{u.category} · {u.institution}</span>
+                      <h3 className="text-white font-bold text-lg leading-tight mt-1 line-clamp-2">{u.title}</h3>
+                      <Link href={`/campus-updates/${u.id}`} className="text-sm text-blue-300 hover:text-white font-semibold mt-2 inline-block">
+                        Read More →
+                      </Link>
+                    </div>
+                    {/* Progress dots */}
+                    <div className="flex gap-1.5 flex-shrink-0 mt-1">
+                      {campusTicker.map((_, di) => (
+                        <button key={di} onClick={() => setTickerIdx(di)} className={`w-2 h-2 rounded-full transition-all ${di === tickerIdx ? "bg-white scale-125" : "bg-white/30"}`} />
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Partners Marquee (infinite scroll) ───────────────────────────── */}
+        {partners.length > 0 && (
+          <section className="py-12 px-4 bg-white overflow-hidden">
+            <div className="max-w-7xl mx-auto mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-[#1a3c8f] uppercase tracking-widest mb-1">OUR PARTNERS</p>
+                <h2 className="text-2xl font-extrabold text-gray-900">Partner Institutions</h2>
+              </div>
+              <Link href="/partners" className="text-sm text-[#1a3c8f] hover:underline font-semibold flex items-center gap-1">
+                View All <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+            {/* Infinite scroll marquee */}
+            <div className="relative">
+              <style>{`
+                @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+                .marquee-track { animation: marquee 30s linear infinite; }
+                .marquee-track:hover { animation-play-state: paused; }
+              `}</style>
+              <div className="flex marquee-track" style={{ width: "max-content" }}>
+                {[...partners, ...partners].map((p, i) => (
+                  <Link
+                    key={`${p.id}-${i}`}
+                    href="/partners"
+                    className="flex flex-col items-center mx-4 w-24 group flex-shrink-0"
+                  >
+                    {p.logo_url ? (
+                      <img src={p.logo_url} alt={p.name} className="w-14 h-14 object-contain rounded-xl mb-2 group-hover:scale-110 transition-transform" />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-md mb-2 group-hover:scale-110 transition-transform"
+                        style={{ backgroundColor: p.color }}
+                      >
+                        {p.abbreviation.slice(0, 3)}
+                      </div>
+                    )}
+                    <p className="text-[10px] text-gray-500 text-center leading-tight line-clamp-2">{p.name}</p>
+                  </Link>
+                ))}
+              </div>
+              {/* Fade edges */}
+              <div className="pointer-events-none absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-white to-transparent" />
+              <div className="pointer-events-none absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-white to-transparent" />
+            </div>
+          </section>
+        )}
 
       </main>
       <Footer />

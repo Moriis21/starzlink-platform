@@ -9,6 +9,7 @@ import { Job } from "@/types";
 import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
+import AuthGate from "@/components/ui/AuthGate";
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -45,7 +46,27 @@ export default function JobDetailPage() {
 
   const daysLeft = getDaysLeft(job.deadline);
 
+  const heroPreview = (
+    <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
+      <div className="max-w-4xl mx-auto">
+        <Link href="/opportunities/jobs" className="flex items-center gap-1 text-blue-300 text-sm mb-4 hover:text-white">
+          <ChevronLeft className="w-4 h-4" /> Back to Jobs
+        </Link>
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center flex-shrink-0">
+            <Building2 className="w-8 h-8 text-[#1a3c8f]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold">{job.title}</h1>
+            <p className="text-blue-200">{job.company} · {job.location}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
+    <AuthGate preview={heroPreview}>
     <div>
       {/* Hero */}
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
@@ -206,5 +227,6 @@ export default function JobDetailPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

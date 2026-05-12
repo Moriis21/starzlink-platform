@@ -8,6 +8,7 @@ import { scholarshipsApi } from "@/lib/api";
 import { Scholarship } from "@/types";
 import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import AuthGate from "@/components/ui/AuthGate";
 
 export default function ScholarshipDetailPage() {
   const { id } = useParams();
@@ -31,7 +32,18 @@ export default function ScholarshipDetailPage() {
 
   const daysLeft = getDaysLeft(item.deadline);
 
+  const heroPreview = (
+    <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
+      <div className="max-w-4xl mx-auto">
+        <Link href="/opportunities/scholarships" className="flex items-center gap-1 text-blue-300 text-sm mb-4 hover:text-white"><ChevronLeft className="w-4 h-4" /> Back to Scholarships</Link>
+        <h1 className="text-2xl font-extrabold">{item.title}</h1>
+        <p className="text-blue-200">{item.provider} · {item.country}</p>
+      </div>
+    </div>
+  );
+
   return (
+    <AuthGate preview={heroPreview}>
     <div>
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
         <div className="max-w-4xl mx-auto">
@@ -92,5 +104,6 @@ export default function ScholarshipDetailPage() {
         </div>
       </div>
     </div>
+    </AuthGate>
   );
 }

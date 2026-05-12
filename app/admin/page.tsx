@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { AdminStats } from "@/types";
-import { Users, Briefcase, GraduationCap, BookOpen, Megaphone, TrendingUp, Mail, Clock, Plus, ArrowUpRight } from "lucide-react";
+import { Users, Briefcase, GraduationCap, BookOpen, Megaphone, TrendingUp, Mail, Clock, Plus, ArrowUpRight, Activity } from "lucide-react";
+import { insforge } from "@/lib/insforge";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import {
@@ -52,20 +53,30 @@ const latestOpportunities = [
   { title: "Graphic Designer", category: "Design", posted_by: "Creative Studio", date: "May 20, 2025", applications: 52, status: "Inactive" },
 ];
 
+interface ActivityLog { id: string; action: string; module: string; details?: string; created_at: string; }
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("Last 7 Days");
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [recentJobs, setRecentJobs] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await adminApi.getStats();
-        setStats(res.data?.data || res.data);
+        const [statsRes, logsRes, jobsRes] = await Promise.allSettled([
+          adminApi.getStats(),
+          insforge.database.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(6),
+          insforge.database.from("jobs").select("id,title,category,company,created_at,status").order("created_at", { ascending: false }).limit(5),
+        ]);
+        if (statsRes.status === "fulfilled") setStats(statsRes.value.data?.data || statsRes.value.data);
+        if (logsRes.status === "fulfilled") setActivityLogs((logsRes.value as any).data ?? []);
+        if (jobsRes.status === "fulfilled") setRecentJobs((jobsRes.value as any).data ?? []);
       } catch {}
       setLoading(false);
     };
-    fetch();
+    fetchAll();
   }, []);
 
   const statCards = [
@@ -132,26 +143,34 @@ export default function AdminDashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity — from DB */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-gray-900">Recent Activity</h2>
             <Link href="/admin/activity-logs" className="text-xs text-[#1a3c8f] hover:underline">View All</Link>
           </div>
-          <div className="space-y-3">
-            {recentActivity.map((item, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className={`w-8 h-8 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                  <item.icon className="w-4 h-4" />
+          {activityLogs.length === 0 ? (
+            <div className="py-6 text-center">
+              <Activity className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+              <p className="text-xs text-gray-400">No activity logged yet.</p>
+              <p className="text-[10px] text-gray-300 mt-1">Actions like adding jobs or scholarships will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activityLogs.map((log) => (
+                <div key={log.id} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-gray-900 capitalize">{log.action} · {log.module?.replace("_", " ")}</p>
+                    {log.details && <p className="text-xs text-gray-500 truncate">{log.details}</p>}
+                    <p className="text-[10px] text-gray-400 mt-0.5">{formatDate(log.created_at)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-900">{item.text}</p>
-                  <p className="text-xs text-gray-500">{item.sub}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{item.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -173,15 +192,16 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {latestOpportunities.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                {recentJobs.length === 0 ? (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-xs text-gray-400">No jobs yet</td></tr>
+                ) : recentJobs.map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{row.title}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{row.category}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{row.posted_by}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{row.date}</td>
-                    <td className="px-4 py-3 text-xs text-gray-900 font-medium">{row.applications}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{row.category || "—"}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{row.company}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(row.created_at)}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${row.status === "Active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>{row.status}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${row.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>{row.status}</span>
                     </td>
                   </tr>
                 ))}
