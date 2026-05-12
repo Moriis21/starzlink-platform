@@ -13,6 +13,8 @@ import { formatDate } from "@/lib/utils";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { FadeUp, FadeIn, SlideLeft, SlideRight, StaggerGroup, StaggerItem, ScaleCard, AnimatedCounter } from "@/components/ui/animations";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 const stats = [
@@ -154,15 +156,20 @@ export default function HomePage() {
               </div>
 
               {/* Stats grid */}
-              <div className="hidden lg:grid grid-cols-2 gap-4">
+              <StaggerGroup className="hidden lg:grid grid-cols-2 gap-4">
                 {stats.map(({ value, label, icon: Icon }) => (
-                  <div key={label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/15 transition-colors">
-                    <Icon className="w-8 h-8 text-blue-300 mx-auto mb-3" />
-                    <div className="text-3xl font-extrabold text-white mb-1">{value}</div>
-                    <div className="text-blue-200 text-sm font-medium">{label}</div>
-                  </div>
+                  <StaggerItem key={label}>
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -4 }}
+                      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 text-center hover:bg-white/20 transition-colors cursor-default"
+                    >
+                      <Icon className="w-8 h-8 text-blue-300 mx-auto mb-3" />
+                      <div className="text-3xl font-extrabold text-white mb-1">{value}</div>
+                      <div className="text-blue-200 text-sm font-medium">{label}</div>
+                    </motion.div>
+                  </StaggerItem>
                 ))}
-              </div>
+              </StaggerGroup>
             </div>
 
             {/* Mobile stats */}
@@ -186,12 +193,12 @@ export default function HomePage() {
               <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">Explore Opportunities</h2>
               <p className="text-gray-500 max-w-xl mx-auto">Find your path through our curated categories — all verified, all real.</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <StaggerGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {categories.map(({ label, icon: Icon, href, color, desc }) => (
+                <StaggerItem key={label}>
                 <Link
-                  key={label}
                   href={href}
-                  className={`group bg-white rounded-2xl border ${color.split(" ")[2] || "border-gray-100"} p-6 hover:shadow-lg transition-all hover:-translate-y-1`}
+                  className={`group bg-white rounded-2xl border ${color.split(" ")[2] || "border-gray-100"} p-6 hover:shadow-lg transition-all hover:-translate-y-1 block`}
                 >
                   <div className={`w-12 h-12 ${color.split(" ").slice(0,2).join(" ")} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <Icon className="w-6 h-6" />
@@ -202,8 +209,9 @@ export default function HomePage() {
                     Browse <ArrowRight className="w-4 h-4" />
                   </span>
                 </Link>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerGroup>
           </div>
         </section>
 

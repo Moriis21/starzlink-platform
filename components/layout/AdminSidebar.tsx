@@ -8,8 +8,7 @@ import {
   Globe, Menu, X, ChevronDown, ChevronRight, Tag
 } from "lucide-react";
 import { useState } from "react";
-import StarzLinkLogo from "@/components/ui/StarzLinkLogo";
-import Image from "next/image";
+import Logo from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
@@ -62,16 +61,7 @@ export default function AdminSidebar() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-white/10">
         {!collapsed && (
-          <Link href="/">
-            <Image
-              src="/images/logo.jpg"
-              alt="StarzLink"
-              width={120}
-              height={120}
-              style={{ height: "36px", width: "auto" }}
-              className="object-contain brightness-0 invert"
-            />
-          </Link>
+          <Logo variant="dark" size="sm" href="/" />
         )}
         <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
           {collapsed ? <Menu className="w-5 h-5" /> : <X className="w-4 h-4" />}

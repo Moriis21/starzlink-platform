@@ -5,8 +5,7 @@ import { useState } from "react";
 import { MessageCircle, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { newsletterApi } from "@/lib/api";
 import toast from "react-hot-toast";
-import StarzLinkLogo from "@/components/ui/StarzLinkLogo";
-import Image from "next/image";
+import Logo from "@/components/ui/Logo";
 
 const WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb60NZgGZNCt2yKAOa17";
 
@@ -54,16 +53,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="mb-4">
-              <Link href="/">
-                <Image
-                  src="/images/logo.jpg"
-                  alt="StarzLink"
-                  width={140}
-                  height={140}
-                  style={{ height: "44px", width: "auto" }}
-                  className="object-contain brightness-0 invert"
-                />
-              </Link>
+              <Logo variant="dark" size="sm" href="/" />
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               Empowering students and professionals by connecting them to opportunities, resources and updates that shape a better future.

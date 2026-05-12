@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, Search, LogOut, User, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import StarzLinkLogo from "@/components/ui/StarzLinkLogo";
-import Image from "next/image";
+import Logo from "@/components/ui/Logo";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -47,17 +47,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0">
-            <Image
-              src="/images/logo.jpg"
-              alt="StarzLink — Opportunity · Impact · Inspiration"
-              width={140}
-              height={140}
-              style={{ height: "48px", width: "auto" }}
-              className="object-contain"
-              priority
-            />
-          </Link>
+          <Logo variant="light" size="sm" href="/" />
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-1">
@@ -112,9 +102,10 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="hidden lg:flex items-center gap-2">
-            <Link href="/search" className="p-2 text-gray-500 hover:text-[#1a3c8f] hover:bg-blue-50 rounded-lg">
+            <Link href="/opportunities" className="p-2 text-gray-500 hover:text-[#1a3c8f] hover:bg-blue-50 rounded-xl transition-colors">
               <Search className="w-5 h-5" />
             </Link>
+            {user && <NotificationBell />}
             {user ? (
               <div className="relative">
                 <button
