@@ -32,9 +32,7 @@ const whyChoose = [
   { icon: Heart, title: "Community Impact", desc: "We are driven by the impact we create in people's lives." },
 ];
 
-const partners = [
-  "Microsoft", "Coursera", "Google", "Mastercard Foundation", "British Council", "UNDP"
-];
+// Partners are now rendered inline with university data — see /partners page
 
 export default function AboutPage() {
   return (
@@ -198,19 +196,51 @@ export default function AboutPage() {
       {/* Partners */}
       <section className="py-12 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Our Partners</p>
-              <p className="text-gray-600 text-sm">We work with trusted organizations and institutions worldwide.</p>
+              <p className="text-xs font-bold text-[#1a3c8f] uppercase tracking-widest mb-1">OUR PARTNERS</p>
+              <h2 className="text-2xl font-extrabold text-gray-900">Universities in Liberia</h2>
+              <p className="text-gray-500 text-sm mt-1">Partnering with leading institutions across Liberia to connect students with opportunities.</p>
             </div>
-            <button className="text-sm text-[#1a3c8f] hover:underline font-medium flex items-center gap-1">View All Partners <ChevronRight className="w-4 h-4" /></button>
+            <Link href="/partners" className="flex items-center gap-1 text-sm text-[#1a3c8f] font-semibold hover:underline border border-[#1a3c8f] px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors whitespace-nowrap">
+              View All Partners <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-8">
-            {partners.map((partner) => (
-              <div key={partner} className="px-6 py-3 bg-gray-50 rounded-xl text-gray-600 font-semibold hover:bg-blue-50 hover:text-[#1a3c8f] transition-colors text-sm">
-                {partner}
-              </div>
+
+          {/* University logos grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              { abbr: "UL", name: "University of Liberia", color: "#1a3c8f", bg: "#e8f0fe", year: "1862" },
+              { abbr: "CU", name: "Cuttington University", color: "#7c3aed", bg: "#ede9fe", year: "1889" },
+              { abbr: "AMEU", name: "A.M.E. University", color: "#059669", bg: "#d1fae5", year: "1997" },
+              { abbr: "UMU", name: "United Methodist University", color: "#d97706", bg: "#fef3c7", year: "1996" },
+              { abbr: "TU", name: "Tubman University", color: "#0891b2", bg: "#cffafe", year: "2009" },
+              { abbr: "BWI", name: "Booker Washington Institute", color: "#16a34a", bg: "#dcfce7", year: "1929" },
+              { abbr: "SMP", name: "Stella Maris Polytechnic", color: "#dc2626", bg: "#fee2e2", year: "1977" },
+              { abbr: "MPCHS", name: "Mother Patern College", color: "#be185d", bg: "#fce7f3", year: "1971" },
+            ].map(uni => (
+              <Link
+                key={uni.abbr}
+                href="/partners"
+                className="group flex flex-col items-center bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:-translate-y-1 transition-all text-center"
+              >
+                {/* Logo badge */}
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-sm mb-2 group-hover:scale-110 transition-transform"
+                  style={{ background: uni.color }}
+                >
+                  {uni.abbr.length <= 3 ? uni.abbr : uni.abbr.slice(0, 2)}
+                </div>
+                <p className="text-xs font-semibold text-gray-700 leading-tight line-clamp-2">{uni.name}</p>
+                <p className="text-[10px] text-gray-400 mt-1">Est. {uni.year}</p>
+              </Link>
             ))}
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/partners" className="inline-flex items-center gap-1.5 text-sm text-[#1a3c8f] font-semibold hover:underline">
+              View all {12}+ partner institutions in Liberia <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
