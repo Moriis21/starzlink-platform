@@ -139,6 +139,25 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Partners
+CREATE TABLE IF NOT EXISTS partners (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  abbreviation TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'university' CHECK (type IN ('university', 'organization', 'ngo', 'government', 'corporate')),
+  scope TEXT NOT NULL DEFAULT 'local' CHECK (scope IN ('local', 'international')),
+  location TEXT,
+  country TEXT NOT NULL DEFAULT 'Liberia',
+  founded TEXT,
+  website TEXT,
+  description TEXT,
+  logo_url TEXT,
+  color TEXT NOT NULL DEFAULT '#1a3c8f',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Messages (Contact Form)
 CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -193,6 +212,8 @@ CREATE INDEX IF NOT EXISTS idx_saved_items_user_id ON saved_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
 CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_partners_scope ON partners(scope);
+CREATE INDEX IF NOT EXISTS idx_partners_type ON partners(type);
 
 -- RLS Policies
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -207,6 +228,7 @@ ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE partners ENABLE ROW LEVEL SECURITY;
 
 -- Public read for content tables
 CREATE POLICY "Public read jobs" ON jobs FOR SELECT USING (status = 'active');

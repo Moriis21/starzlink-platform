@@ -34,6 +34,7 @@ const menuItems = [
   { label: "Campus Updates", href: "/admin/campus-updates", icon: Megaphone },
   { label: "Resources", href: "/admin/resources", icon: FolderOpen },
   { label: "Categories", href: "/admin/categories", icon: Tag },
+  { label: "Partners", href: "/admin/partners", icon: Globe },
   { label: "Submissions", href: "/admin/submissions", icon: BookOpen },
   { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: true },
   { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
