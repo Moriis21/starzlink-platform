@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
-  Globe, Menu, X, ChevronDown, ChevronRight, Tag
+  Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -39,8 +39,8 @@ const menuItems = [
   { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: true },
   { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { label: "Reports", href: "/admin/reports", icon: Activity },
-  { label: "Activity Logs", href: "/admin/activity-logs", icon: Activity },
+  { label: "Reports", href: "/admin/reports", icon: TrendingUp },
+  { label: "Activity Logs", href: "/admin/activity-logs", icon: ClipboardList },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

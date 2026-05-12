@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Search, Megaphone, Calendar, Building2, Bookmark, LayoutList, Newspaper, PartyPopper, BellRing, GraduationCap, ClipboardList, X, Loader2, CheckCircle2, Send, User, Phone, Mail, IdCard, BookOpen, Shield, ChevronDown } from "lucide-react";
 import { campusApi, newsletterApi } from "@/lib/api";
 import { insforge } from "@/lib/insforge";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { CampusUpdate } from "@/types";
 import { formatDate, cn } from "@/lib/utils";
 import Link from "next/link";
@@ -68,9 +70,14 @@ const blankForm = (): SubmissionForm => ({
   agreed_terms: false,
 });
 
-function SubmitUpdateModal({ onClose }: { onClose: () => void }) {
+function SubmitUpdateModal({ onClose, prefill }: { onClose: () => void; prefill?: { full_name: string; email: string; phone?: string } }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState<SubmissionForm>(blankForm());
+  const [form, setForm] = useState<SubmissionForm>({
+    ...blankForm(),
+    full_name: prefill?.full_name || "",
+    email: prefill?.email || "",
+    phone: prefill?.phone || "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -370,6 +377,8 @@ const catColors: Record<string, string> = {
 };
 
 export default function CampusUpdatesPage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [updates, setUpdates] = useState<CampusUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("all");
@@ -380,6 +389,15 @@ export default function CampusUpdatesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [newsEmail, setNewsEmail] = useState("");
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+
+  const openSubmitForm = () => {
+    if (!user) {
+      toast("Please log in to submit a campus update.", { icon: "🔒" });
+      router.push("/login?next=/campus-updates");
+      return;
+    }
+    setShowSubmitModal(true);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -421,7 +439,7 @@ export default function CampusUpdatesPage() {
             </div>
             <p className="text-xs text-blue-200 mb-3">Submit news or events happening on your campus.</p>
             <button
-              onClick={() => setShowSubmitModal(true)}
+              onClick={openSubmitForm}
               className="block w-full text-center bg-white text-[#1a3c8f] font-bold text-sm py-2 rounded-xl hover:bg-blue-50 transition-colors"
             >Submit Update</button>
           </div>
@@ -559,14 +577,19 @@ export default function CampusUpdatesPage() {
       {/* Mobile: floating submit button */}
       <div className="lg:hidden fixed bottom-6 right-6 z-40">
         <button
-          onClick={() => setShowSubmitModal(true)}
+          onClick={openSubmitForm}
           className="flex items-center gap-2 bg-[#1a3c8f] text-white font-bold px-5 py-3 rounded-2xl shadow-xl hover:bg-blue-900 transition-colors"
         >
           <Megaphone className="w-4 h-4" /> Submit Update
         </button>
       </div>
 
-      {showSubmitModal && <SubmitUpdateModal onClose={() => setShowSubmitModal(false)} />}
+      {showSubmitModal && (
+        <SubmitUpdateModal
+          onClose={() => setShowSubmitModal(false)}
+          prefill={user ? { full_name: user.full_name, email: user.email, phone: user.phone } : undefined}
+        />
+      )}
     </div>
   );
 }

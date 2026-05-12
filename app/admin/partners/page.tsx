@@ -7,6 +7,7 @@ import {
   Building2, Plus, Search, Pencil, Trash2, Globe, MapPin, ExternalLink,
   GraduationCap, Loader2, Save, X, ChevronDown, ChevronRight
 } from "lucide-react";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 type PartnerScope = "local" | "international";
 type PartnerType = "university" | "organization" | "ngo" | "government" | "corporate";
@@ -387,8 +388,23 @@ export default function AdminPartnersPage() {
                   <textarea value={form.description} onChange={e => set("description", e.target.value)} rows={3} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f] resize-none" placeholder="Brief description of the institution…" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">Logo URL <span className="text-gray-400 font-normal text-xs">(optional — leave blank to use initials badge)</span></label>
-                  <input value={form.logo_url} onChange={e => set("logo_url", e.target.value)} className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f]" placeholder="https://..." />
+                  <ImageUploader
+                    value={form.logo_url}
+                    onChange={url => set("logo_url", url)}
+                    folder="partners"
+                    label="Partner Logo"
+                    hint="Upload logo image · PNG, JPG · Max 5 MB · Leave blank to use initials badge"
+                    aspectRatio="square"
+                  />
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    Or paste a direct URL:{" "}
+                    <input
+                      value={form.logo_url}
+                      onChange={e => set("logo_url", e.target.value)}
+                      className="border-b border-dashed border-gray-300 px-1 text-xs focus:outline-none text-gray-600 w-48"
+                      placeholder="https://..."
+                    />
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-700 block mb-2">Badge Color</label>
