@@ -62,7 +62,7 @@ export default function JobsPage() {
               <input
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder="Search by job title, keyword or company"
-                className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none"
+                className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none border-0"
               />
             </div>
             <select

@@ -44,16 +44,16 @@ export default function ScholarshipsPage() {
 
   return (
     <div>
-      <div className="bg-gradient-to-r from-[#4c1d95] to-[#7c3aed] py-14 px-4 text-white">
+      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-14 px-4 text-white">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-extrabold mb-2">Discover Scholarships Worldwide</h1>
-          <p className="text-purple-200 mb-6">Find fully-funded and partial scholarships from top universities and organizations.</p>
+          <p className="text-blue-200 mb-6">Find fully-funded and partial scholarships from top universities and organizations.</p>
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search scholarships..." className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search scholarships..." className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none border-0" />
             </div>
-            <button type="submit" className="px-6 py-3.5 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-50">Search</button>
+            <button type="submit" className="px-6 py-3.5 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50">Search</button>
           </form>
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function ScholarshipsPage() {
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Study Level</h4>
               {studyLevels.map(lvl => (
                 <label key={lvl} className="flex items-center gap-2 py-1 cursor-pointer">
-                  <input type="radio" name="study_level" checked={filters.study_level === lvl} onChange={() => setFilters(f => ({ ...f, study_level: lvl }))} className="accent-purple-600" />
+                  <input type="radio" name="study_level" checked={filters.study_level === lvl} onChange={() => setFilters(f => ({ ...f, study_level: lvl }))} className="accent-[#1a3c8f]" />
                   <span className="text-sm text-gray-600">{lvl}</span>
                 </label>
               ))}
@@ -89,7 +89,7 @@ export default function ScholarshipsPage() {
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Funding Type</h4>
               {fundingTypes.map(ft => (
                 <label key={ft} className="flex items-center gap-2 py-1 cursor-pointer">
-                  <input type="checkbox" checked={filters.funding_type === ft} onChange={e => setFilters(f => ({ ...f, funding_type: e.target.checked ? ft : "" }))} className="accent-purple-600" />
+                  <input type="checkbox" checked={filters.funding_type === ft} onChange={e => setFilters(f => ({ ...f, funding_type: e.target.checked ? ft : "" }))} className="accent-[#1a3c8f]" />
                   <span className="text-sm text-gray-600">{ft}</span>
                 </label>
               ))}
@@ -122,12 +122,12 @@ export default function ScholarshipsPage() {
                   <div key={s.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-5 group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-full">{s.funding_type}</span>
+                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">{s.funding_type}</span>
                         <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full">{s.study_level}</span>
                       </div>
-                      <button className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"><Bookmark className="w-4 h-4" /></button>
+                      <button className="p-1.5 text-gray-400 hover:text-[#1a3c8f] hover:bg-blue-50 rounded-lg"><Bookmark className="w-4 h-4" /></button>
                     </div>
-                    <h3 className="font-bold text-gray-900 group-hover:text-purple-700 transition-colors line-clamp-2 mb-1">{s.title}</h3>
+                    <h3 className="font-bold text-gray-900 group-hover:text-[#1a3c8f] transition-colors line-clamp-2 mb-1">{s.title}</h3>
                     <p className="text-sm text-gray-500 mb-2 flex items-center gap-1"><GraduationCap className="w-3.5 h-3.5" />{s.provider}</p>
                     <p className="text-sm text-gray-500 mb-3 flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{s.country}</p>
                     <p className="text-sm text-gray-600 line-clamp-2 mb-3">{s.description}</p>
@@ -135,7 +135,7 @@ export default function ScholarshipsPage() {
                       <span className={cn("text-xs font-medium flex items-center gap-1", days <= 7 && days > 0 ? "text-red-600" : "text-gray-500")}>
                         <Calendar className="w-3.5 h-3.5" />{days > 0 ? `${days} days left` : "Expired"} · {formatDate(s.deadline)}
                       </span>
-                      <Link href={`/opportunities/scholarships/${s.id}`} className="text-sm font-semibold text-purple-700 hover:underline">View Details →</Link>
+                      <Link href={`/opportunities/scholarships/${s.id}`} className="text-sm font-semibold text-[#1a3c8f] hover:underline">View Details →</Link>
                     </div>
                   </div>
                 );

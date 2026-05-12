@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usersApi, storageApi } from "@/lib/api";
 import { insforge } from "@/lib/insforge";
 import toast from "react-hot-toast";
-import { User, Mail, Phone, Camera, Save, Lock } from "lucide-react";
+import { User, Mail, Phone, Camera, Save, Lock, Eye, EyeOff, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -13,6 +13,10 @@ export default function ProfilePage() {
     full_name: "", phone: "", user_type: "student", profile_image: "",
   });
   const [passwords, setPasswords] = useState({ current: "", new_: "", confirm: "" });
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passStep, setPassStep] = useState<"form" | "done">("form");
   const [saving, setSaving] = useState(false);
   const [changingPass, setChangingPass] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -57,16 +61,36 @@ export default function ProfilePage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwords.current) { toast.error("Enter your current password."); return; }
+    if (passwords.new_.length < 6) { toast.error("New password must be at least 6 characters."); return; }
     if (passwords.new_ !== passwords.confirm) { toast.error("New passwords don't match."); return; }
-    if (passwords.new_.length < 6) { toast.error("Password must be at least 6 characters."); return; }
+    if (passwords.current === passwords.new_) { toast.error("New password must be different from the current one."); return; }
+
     setChangingPass(true);
     try {
-      // InsForge doesn't support direct password change via SDK in the same way
-      // Use sendResetPasswordEmail as a workaround or handle via admin
-      await insforge.auth.sendResetPasswordEmail({ email: user?.email || "" });
-      toast.success("Password reset email sent! Check your inbox.");
+      // Step 1: Verify old password by attempting to sign in
+      const { error: verifyError } = await insforge.auth.signInWithPassword({
+        email: user?.email || "",
+        password: passwords.current,
+      });
+      if (verifyError) {
+        toast.error("Current password is incorrect.");
+        setChangingPass(false);
+        return;
+      }
+
+      // Step 2: Update to new password
+      const { error: updateError } = await (insforge.auth as any).updateUser({
+        password: passwords.new_,
+      });
+      if (updateError) throw updateError;
+
       setPasswords({ current: "", new_: "", confirm: "" });
-    } catch { toast.error("Failed to initiate password change."); }
+      setPassStep("done");
+      toast.success("Password changed successfully!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to change password.");
+    }
     setChangingPass(false);
   };
 
@@ -167,11 +191,98 @@ export default function ProfilePage() {
 
           {/* Password */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="font-bold text-gray-900 mb-5 flex items-center gap-2"><Lock className="w-5 h-5" />Change Password</h2>
-            <p className="text-sm text-gray-500 mb-4">For security, we'll send a password reset link to your email.</p>
-            <button onClick={handleChangePassword} disabled={changingPass} className="flex items-center gap-2 border border-[#1a3c8f] text-[#1a3c8f] font-bold px-6 py-3 rounded-xl hover:bg-blue-50 disabled:opacity-60">
-              <Lock className="w-4 h-4" />{changingPass ? "Sending..." : "Send Password Reset Email"}
-            </button>
+            <h2 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#1a3c8f]" /> Change Password
+            </h2>
+            <p className="text-sm text-gray-500 mb-5">Enter your current password to verify, then set a new one.</p>
+
+            {passStep === "done" ? (
+              <div className="flex flex-col items-center py-4 text-center">
+                <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="font-bold text-gray-900 mb-1">Password Changed!</p>
+                <p className="text-sm text-gray-500 mb-4">Your password has been updated successfully.</p>
+                <button
+                  onClick={() => setPassStep("form")}
+                  className="text-sm text-[#1a3c8f] font-semibold hover:underline"
+                >
+                  Change again
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                {/* Current password */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">Current Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type={showCurrent ? "text" : "password"}
+                      value={passwords.current}
+                      onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))}
+                      placeholder="Enter your current password"
+                      className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3c8f]"
+                      required
+                    />
+                    <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New password */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">New Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type={showNew ? "text" : "password"}
+                      value={passwords.new_}
+                      onChange={e => setPasswords(p => ({ ...p, new_: e.target.value }))}
+                      placeholder="At least 6 characters"
+                      className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3c8f]"
+                      required
+                      minLength={6}
+                    />
+                    <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm new password */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">Confirm New Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type={showConfirm ? "text" : "password"}
+                      value={passwords.confirm}
+                      onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))}
+                      placeholder="Repeat new password"
+                      className="w-full pl-10 pr-11 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3c8f]"
+                      required
+                    />
+                    <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {passwords.confirm && passwords.new_ !== passwords.confirm && (
+                    <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={changingPass || !passwords.current || !passwords.new_ || passwords.new_ !== passwords.confirm}
+                  className="flex items-center gap-2 bg-[#1a3c8f] text-white font-bold px-6 py-3 rounded-xl hover:bg-blue-900 disabled:opacity-60 transition-colors"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  {changingPass ? "Verifying…" : "Update Password"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

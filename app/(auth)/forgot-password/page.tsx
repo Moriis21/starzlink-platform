@@ -6,11 +6,6 @@ import { Mail, ArrowLeft, KeyRound, Eye, EyeOff, CheckCircle2, Loader2, ShieldCh
 import { insforge } from "@/lib/insforge";
 import toast from "react-hot-toast";
 
-// Generate a random 6-digit code
-function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
 type Step = "email" | "code" | "done";
 
 export default function ForgotPasswordPage() {
@@ -24,40 +19,22 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
 
-  // ── Step 1: Send OTP ────────────────────────────────────────────────────
-  const sendOTP = async (targetEmail: string) => {
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
-
-    // Store OTP in DB
-    const { error: dbError } = await insforge.database
-      .from("password_reset_tokens")
-      .insert({ email: targetEmail, code: otp, expires_at: expiresAt, used: false });
-
-    if (dbError) throw new Error("Failed to generate reset code.");
-
-    // Send email via edge function
-    const { error: emailError } = await insforge.functions.invoke("send-email", {
-      body: {
-        to: targetEmail,
-        subject: "Your StarzLink Password Reset Code",
-        type: "password_reset",
-        data: { code: otp },
-      },
-    });
-
-    if (emailError) throw new Error("Failed to send reset code. Please try again.");
+  // ── Step 1: Request OTP via InsForge's native reset ─────────────────────
+  const sendCode = async (targetEmail: string) => {
+    // InsForge's "Reset Password Method: code" — this sends a 6-digit OTP natively
+    const { error } = await insforge.auth.sendResetPasswordEmail({ email: targetEmail });
+    if (error) throw error;
   };
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await sendOTP(email);
+      await sendCode(email);
       setStep("code");
       toast.success("Reset code sent! Check your inbox.");
     } catch (err: any) {
-      toast.error(err.message || "Something went wrong.");
+      toast.error(err?.message || "Could not send code. Check your email address.");
     }
     setLoading(false);
   };
@@ -65,15 +42,15 @@ export default function ForgotPasswordPage() {
   const handleResend = async () => {
     setResending(true);
     try {
-      await sendOTP(email);
+      await sendCode(email);
       toast.success("New code sent!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to resend.");
+    } catch {
+      toast.error("Failed to resend. Try again.");
     }
     setResending(false);
   };
 
-  // ── Step 2: Verify code + set new password ──────────────────────────────
+  // ── Step 2: Verify OTP + set new password ───────────────────────────────
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (code.length !== 6) { toast.error("Enter the 6-digit code from your email."); return; }
@@ -82,14 +59,24 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      const { data, error } = await insforge.functions.invoke("reset-password", {
-        body: { email, code, newPassword },
+      // InsForge verifies the OTP and creates a recovery session
+      const { error: verifyError } = await (insforge.auth as any).verifyOtp({
+        email,
+        token: code,
+        type: "recovery",
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message || "Reset failed.");
+      if (verifyError) throw verifyError;
+
+      // With active recovery session, update the password
+      const { error: updateError } = await (insforge.auth as any).updateUser({
+        password: newPassword,
+      });
+      if (updateError) throw updateError;
+
       setStep("done");
       toast.success("Password reset successfully!");
     } catch (err: any) {
-      toast.error(err.message || "Invalid or expired code.");
+      toast.error(err?.message || "Invalid or expired code. Please try again.");
     }
     setLoading(false);
   };
@@ -108,10 +95,7 @@ export default function ForgotPasswordPage() {
             <p className="text-gray-500 text-sm mb-6">
               Your password has been reset successfully. You can now log in with your new password.
             </p>
-            <Link
-              href="/login"
-              className="flex items-center justify-center gap-2 w-full bg-[#1a3c8f] text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition-colors"
-            >
+            <Link href="/login" className="flex items-center justify-center gap-2 w-full bg-[#1a3c8f] text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition-colors">
               Go to Login
             </Link>
           </div>
@@ -188,7 +172,7 @@ export default function ForgotPasswordPage() {
                   maxLength={6}
                   value={code}
                   onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="Enter 6-digit code"
+                  placeholder="000000"
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:border-[#1a3c8f] focus:ring-1 focus:ring-[#1a3c8f]/20"
                   required
                 />
