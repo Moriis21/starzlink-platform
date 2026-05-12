@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, SlidersHorizontal, SearchX } from "lucide-react";
+import { Search, SearchX, GraduationCap, Briefcase, BookOpen, Megaphone } from "lucide-react";
 import { jobsApi, scholarshipsApi, trainingsApi } from "@/lib/api";
 import OpportunityCard from "@/components/ui/OpportunityCard";
 import Pagination from "@/components/ui/Pagination";
@@ -60,23 +60,56 @@ export default function OpportunitiesPage() {
 
   return (
     <div>
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-14 px-4 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-extrabold mb-3">Find the Right Opportunity for You</h1>
-          <p className="text-blue-200 mb-7">Explore verified opportunities from top organizations around the world.</p>
+      {/* Hero with brand image */}
+      <div className="relative bg-[#0d1b4b] py-20 px-4 text-white overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/images/explore-opportunities.jpg"
+            alt=""
+            aria-hidden
+            className="w-full h-full object-cover object-center opacity-25"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0d1b4b]/90 via-[#0d1b4b]/85 to-[#1a3c8f]/80" />
+        </div>
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <p className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">EXPLORE ALL OPPORTUNITIES</p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 leading-tight">
+            Your Future Starts With the<br />
+            <span className="text-blue-300">Right Opportunities</span>
+          </h1>
+          <p className="text-blue-200 mb-8 max-w-xl mx-auto">
+            Explore verified scholarships, jobs, trainings and campus updates from top organizations around the world.
+          </p>
+
+          {/* Quick category stats */}
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            {[
+              { icon: GraduationCap, label: "Scholarships", count: "250+ Available" },
+              { icon: Briefcase, label: "Jobs", count: "350+ Openings" },
+              { icon: BookOpen, label: "Trainings", count: "120+ Programs" },
+              { icon: Megaphone, label: "Campus Updates", count: "Events & News" },
+            ].map(({ icon: Icon, label, count }) => (
+              <div key={label} className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-sm">
+                <Icon className="w-4 h-4 text-blue-300" />
+                <span className="font-semibold">{label}</span>
+                <span className="text-blue-300 text-xs">· {count}</span>
+              </div>
+            ))}
+          </div>
+
           <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Search opportunities, keywords..."
-                className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none"
+                placeholder="Search scholarships, jobs, trainings..."
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none"
               />
             </div>
-            <button type="submit" className="px-6 py-3.5 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50 transition-colors">
+            <button type="submit" className="px-6 py-3.5 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50 transition-colors whitespace-nowrap">
               Search
             </button>
           </form>

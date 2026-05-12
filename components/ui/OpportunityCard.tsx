@@ -105,7 +105,12 @@ export default function OpportunityCard({
             </div>
           )}
           <Link
-            href={`/${type === "campus-update" ? "campus-updates" : type + "s"}/${id}`}
+            href={
+              type === "job" ? `/opportunities/jobs/${id}` :
+              type === "scholarship" ? `/opportunities/scholarships/${id}` :
+              type === "training" ? `/trainings/${id}` :
+              `/campus-updates/${id}`
+            }
             className="flex items-center gap-1 text-sm font-semibold text-[#1a3c8f] hover:underline ml-auto"
           >
             View Details <ExternalLink className="w-3.5 h-3.5" />

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BrandImage from "@/components/ui/BrandImage";
 import {
   Target, Eye, CheckCircle, Shield, Star, Globe, Users, TrendingUp,
-  ChevronRight, BadgeCheck, LayoutGrid, Bell, Monitor, Heart, Award, Lightbulb
+  ChevronRight, BadgeCheck, LayoutGrid, Bell, Monitor, Heart, Award, Lightbulb, Play
 } from "lucide-react";
 
 export const metadata: Metadata = { title: "About Us" };
@@ -38,55 +39,107 @@ const partners = [
 export default function AboutPage() {
   return (
     <div>
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-16 px-4 text-white">
-        <div className="max-w-7xl mx-auto flex items-center gap-8">
-          <div className="flex-1">
-            <h1 className="text-4xl font-extrabold mb-3">About StarzLink</h1>
-            <p className="text-blue-200 text-lg mb-5">
+      {/* Hero — with team image */}
+      <div className="relative bg-[#0d1b4b] py-20 px-4 text-white overflow-hidden">
+        <div className="absolute inset-0">
+          <BrandImage
+            src="/images/about-team.jpg"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-25"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b4b]/95 via-[#0d1b4b]/80 to-[#1a3c8f]/60" />
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">ABOUT STARZLINK</p>
+            <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight">
+              Empowering Minds.<br />
+              <span className="text-blue-300">Creating Impact.</span><br />
+              Inspiring Futures.
+            </h1>
+            <p className="text-blue-200 text-lg mb-6 leading-relaxed">
               We connect students and professionals to life-changing opportunities, knowledge and resources that empower them to build a better future.
             </p>
-            <button className="flex items-center gap-2 bg-white/20 border border-white/30 text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-white/30 transition-colors">
-              ▶ Watch Our Story
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/signup" className="flex items-center gap-2 bg-white text-[#0d1b4b] font-bold px-6 py-3 rounded-xl hover:bg-blue-50 transition-colors">
+                Join StarzLink <ChevronRight className="w-4 h-4" />
+              </Link>
+              <Link href="/contact" className="flex items-center gap-2 bg-white/15 border border-white/30 text-white font-bold px-6 py-3 rounded-xl hover:bg-white/25 transition-colors">
+                Partner With Us
+              </Link>
+            </div>
           </div>
-          <div className="hidden lg:block w-72 h-52 bg-white/10 rounded-2xl border border-white/20" />
+          {/* Mission / Vision quick cards */}
+          <div className="hidden lg:grid grid-cols-1 gap-4">
+            {[
+              { icon: Target, title: "Our Mission", text: "To connect and empower young people by providing access to opportunities that inspire growth, create impact, and build a better future." },
+              { icon: Eye, title: "Our Vision", text: "A world where every young person has equal access to opportunities to thrive and lead change." },
+            ].map(({ icon: Icon, title, text }) => (
+              <div key={title} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-blue-200" />
+                  </div>
+                  <h3 className="font-bold text-white">{title}</h3>
+                </div>
+                <p className="text-blue-200 text-sm leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Our Story */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-7xl mx-auto">
-          <p className="text-xs font-bold text-[#1a3c8f] uppercase tracking-widest mb-2">OUR STORY</p>
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
-                Empowering Futures. Connecting Possibilities.
-              </h2>
-              <p className="text-gray-600 leading-relaxed mb-4">
-                StarzLink was founded with a simple mission - to bridge the gap between talented individuals and life-changing opportunities. We believe that everyone deserves access to the right resources, guidance and platforms to learn, grow and succeed.
-              </p>
-              <p className="text-gray-600 leading-relaxed mb-5">
-                Through our platform, we connect students and professionals to opportunities in scholarships, jobs, trainings and campus updates that drive personal and professional growth.
-              </p>
-              <Link href="/opportunities" className="flex items-center gap-1.5 text-[#1a3c8f] font-semibold hover:underline">
-                Learn More About Us <ChevronRight className="w-4 h-4" />
-              </Link>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Team image */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl h-72 lg:h-[460px] bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f]">
+              <BrandImage
+                src="/images/about-team.jpg"
+                alt="StarzLink team — connect, grow, get opportunities"
+                className="absolute inset-0 w-full h-full object-cover object-top"
+              />
+              {/* Overlay brand tags */}
+              <div className="absolute bottom-6 left-6 right-6 flex gap-3">
+                <div className="bg-white/90 backdrop-blur rounded-xl px-3 py-2 text-center flex-1">
+                  <p className="text-xs font-bold text-[#0d1b4b] uppercase tracking-wide">Connect</p>
+                </div>
+                <div className="bg-[#1a3c8f] text-white rounded-xl px-3 py-2 text-center flex-1">
+                  <p className="text-xs font-bold uppercase tracking-wide">Grow</p>
+                </div>
+                <div className="bg-white/90 backdrop-blur rounded-xl px-3 py-2 text-center flex-1">
+                  <p className="text-xs font-bold text-[#0d1b4b] uppercase tracking-wide">Opportunity</p>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { icon: Target, title: "Our Mission", desc: "To empower individuals by connecting them to verified opportunities, quality training and essential resources." },
-                { icon: Eye, title: "Our Vision", desc: "To be the leading platform that inspires and equips individuals to achieve their dreams and create impact." },
-                { icon: CheckCircle, title: "Our Values", list: values.map(v => v.title) },
-              ].map(({ icon: Icon, title, desc, list }) => (
-                <div key={title} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm text-center">
-                  <Icon className="w-8 h-8 text-[#1a3c8f] mx-auto mb-3" />
-                  <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
-                  {desc && <p className="text-xs text-gray-500">{desc}</p>}
-                  {list && <ul className="text-xs text-gray-500 space-y-1">{list.map(v => <li key={v}>{v}</li>)}</ul>}
-                </div>
-              ))}
+            <div>
+              <p className="text-xs font-bold text-[#1a3c8f] uppercase tracking-widest mb-3">OUR STORY</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-5 leading-tight">
+                Empowering Futures.<br />Connecting Possibilities.
+              </h2>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                StarzLink was founded with a simple mission — to bridge the gap between talented individuals and life-changing opportunities. We believe that everyone deserves access to the right resources, guidance and platforms to learn, grow and succeed.
+              </p>
+              <p className="text-gray-600 leading-relaxed mb-6">
+                Through our platform, we connect students and professionals to opportunities in scholarships, jobs, trainings and campus updates that drive personal and professional growth.
+              </p>
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {[
+                  { icon: Target, title: "Our Mission", text: "Connecting talent to opportunities." },
+                  { icon: Eye, title: "Our Vision", text: "Equal access for all." },
+                  { icon: CheckCircle, title: "Our Values", text: "Integrity, Excellence, Impact." },
+                ].map(({ icon: Icon, title, text }) => (
+                  <div key={title} className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
+                    <Icon className="w-6 h-6 text-[#1a3c8f] mx-auto mb-2" />
+                    <p className="font-bold text-gray-900 text-xs mb-1">{title}</p>
+                    <p className="text-xs text-gray-500">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <Link href="/opportunities" className="inline-flex items-center gap-1.5 bg-[#1a3c8f] text-white font-bold px-5 py-3 rounded-xl hover:bg-blue-900 transition-colors text-sm">
+                Explore Opportunities <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </div>
