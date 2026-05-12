@@ -6,6 +6,7 @@ import { MessageCircle, Mail, Phone, MapPin, Clock } from "lucide-react";
 import { newsletterApi } from "@/lib/api";
 import toast from "react-hot-toast";
 import StarzLinkLogo from "@/components/ui/StarzLinkLogo";
+import Image from "next/image";
 
 const WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb60NZgGZNCt2yKAOa17";
 
@@ -52,8 +53,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="mb-3">
-              <StarzLinkLogo size="sm" variant="light" showTagline={true} href="/" />
+            <div className="mb-4">
+              <Link href="/">
+                <Image
+                  src="/images/logo.jpg"
+                  alt="StarzLink"
+                  width={140}
+                  height={140}
+                  style={{ height: "44px", width: "auto" }}
+                  className="object-contain brightness-0 invert"
+                />
+              </Link>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               Empowering students and professionals by connecting them to opportunities, resources and updates that shape a better future.
@@ -156,9 +166,9 @@ export default function Footer() {
         {/* Contact Info */}
         <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-400">
           <div className="flex items-center gap-2"><Mail className="w-4 h-4 flex-shrink-0" /> support@starzlink.com</div>
-          <div className="flex items-center gap-2"><Phone className="w-4 h-4 flex-shrink-0" /> +234 800 123 4567</div>
-          <div className="flex items-center gap-2"><MapPin className="w-4 h-4 flex-shrink-0" /> 123 Opportunity Avenue, Yaba, Lagos</div>
-          <div className="flex items-center gap-2"><Clock className="w-4 h-4 flex-shrink-0" /> Mon - Fri: 9:00 AM - 6:00 PM (WAT)</div>
+          <div className="flex items-center gap-2"><Phone className="w-4 h-4 flex-shrink-0" /> +231 770 787 020 / 0888 283 007</div>
+          <div className="flex items-center gap-2"><MapPin className="w-4 h-4 flex-shrink-0" /> Monrovia, Liberia</div>
+          <div className="flex items-center gap-2"><Clock className="w-4 h-4 flex-shrink-0" /> Mon - Fri: 9:00 AM - 6:00 PM (GMT)</div>
         </div>
 
         {/* Bottom */}

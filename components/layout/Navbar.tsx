@@ -7,6 +7,7 @@ import { Menu, X, ChevronDown, Search, LogOut, User, LayoutDashboard } from "luc
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import StarzLinkLogo from "@/components/ui/StarzLinkLogo";
+import Image from "next/image";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -46,7 +47,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <StarzLinkLogo size="sm" variant="dark" showTagline={true} />
+          <Link href="/" className="flex-shrink-0">
+            <Image
+              src="/images/logo.jpg"
+              alt="StarzLink — Opportunity · Impact · Inspiration"
+              width={140}
+              height={140}
+              style={{ height: "48px", width: "auto" }}
+              className="object-contain"
+              priority
+            />
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-1">

@@ -70,9 +70,9 @@ export default function ContactPage() {
 
             {[
               { icon: Mail, title: "Email Us", sub: "Send us an email anytime.", value: "support@starzlink.com", href: "mailto:support@starzlink.com" },
-              { icon: Phone, title: "Call Us", sub: "Mon - Fri: 9:00 AM - 6:00 PM (WAT)", value: "+234 800 123 4567", href: "tel:+2348001234567" },
-              { icon: MapPin, title: "Visit Our Office", sub: "123 Opportunity Avenue, Innovation Hub, Yaba, Lagos, Nigeria.", value: "", href: "#" },
-              { icon: Clock, title: "Working Hours", sub: "Monday - Friday", value: "9:00 AM - 6:00 PM (WAT)", href: "" },
+              { icon: Phone, title: "Call Us", sub: "Mon - Fri: 9:00 AM - 6:00 PM (GMT)", value: "+231 770 787 020 / 0888 283 007", href: "tel:+231770787020" },
+              { icon: MapPin, title: "Visit Our Office", sub: "Monrovia, Liberia", value: "", href: "#" },
+              { icon: Clock, title: "Working Hours", sub: "Monday - Friday", value: "9:00 AM - 6:00 PM (GMT)", href: "" },
             ].map(({ icon: Icon, title, sub, value, href }) => (
               <div key={title} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start justify-between group hover:border-[#1a3c8f] hover:shadow-sm transition-all cursor-pointer">
                 <div className="flex items-start gap-3">
@@ -195,15 +195,15 @@ export default function ContactPage() {
               <div className="text-center text-gray-400">
                 <MapPin className="w-12 h-12 mx-auto mb-2" />
                 <p className="text-sm">Map View</p>
-                <p className="text-xs">123 Opportunity Avenue, Yaba, Lagos</p>
+                <p className="text-xs">Monrovia, Liberia</p>
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center justify-between">
               <div>
                 <p className="font-semibold text-gray-900 text-sm">StarzLink Office</p>
-                <p className="text-xs text-gray-500">123 Opportunity Avenue, Innovation Hub, Yaba, Lagos, Nigeria.</p>
+                <p className="text-xs text-gray-500">Monrovia, Liberia</p>
               </div>
-              <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-bold text-[#1a3c8f] border border-[#1a3c8f] px-3 py-2 rounded-xl hover:bg-blue-50 whitespace-nowrap">
+              <a href="https://maps.google.com/maps?q=Monrovia,Liberia" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-bold text-[#1a3c8f] border border-[#1a3c8f] px-3 py-2 rounded-xl hover:bg-blue-50 whitespace-nowrap">
                 Get Directions
               </a>
             </div>

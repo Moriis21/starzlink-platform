@@ -43,7 +43,7 @@ export default function AboutPage() {
       <div className="relative bg-[#0d1b4b] py-20 px-4 text-white overflow-hidden">
         <div className="absolute inset-0">
           <BrandImage
-            src="/images/about-team.jpg"
+            src="/images/hero-students.jpg"
             className="absolute inset-0 w-full h-full object-cover object-center opacity-25"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0d1b4b]/95 via-[#0d1b4b]/80 to-[#1a3c8f]/60" />
@@ -95,9 +95,9 @@ export default function AboutPage() {
             {/* Team image */}
             <div className="relative rounded-3xl overflow-hidden shadow-2xl h-72 lg:h-[460px] bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f]">
               <BrandImage
-                src="/images/about-team.jpg"
+                src="/images/explore-opportunities.jpg"
                 alt="StarzLink team — connect, grow, get opportunities"
-                className="absolute inset-0 w-full h-full object-cover object-top"
+                className="absolute inset-0 w-full h-full object-cover object-center"
               />
               {/* Overlay brand tags */}
               <div className="absolute bottom-6 left-6 right-6 flex gap-3">
