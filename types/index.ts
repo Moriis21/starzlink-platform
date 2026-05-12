@@ -90,6 +90,10 @@ export interface Resource {
   description: string;
   file_url?: string;
   image_url?: string;
+  preview_url?: string;
+  is_paid: boolean;
+  price: number;
+  currency: string;
   status: "active" | "inactive";
   created_at: string;
 }

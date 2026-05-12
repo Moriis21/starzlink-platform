@@ -11,6 +11,8 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@insforge/sdk": "^1.2.7",
+    "@stripe/react-stripe-js": "^6.3.0",
+    "@stripe/stripe-js": "^9.4.0",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

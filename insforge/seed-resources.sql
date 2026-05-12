@@ -1,0 +1,12 @@
+INSERT INTO resources (title, category, description, is_paid, price, currency, status) VALUES
+('Professional CV Template Pack (ATS-Optimized)', 'CV Templates', 'A collection of 5 professionally designed, ATS-optimized CV templates used by top job seekers. Includes modern, classic, and creative layouts for all industries.', true, 4.99, 'USD', 'active'),
+('Executive Resume Template Bundle', 'CV Templates', 'Premium resume templates designed for senior professionals and executives. Includes LinkedIn-ready designs with matching cover letter templates.', true, 6.99, 'USD', 'active'),
+('Career Planning Toolkit 2026', 'Career Tools', 'Complete career planning toolkit including self-assessment worksheets, goal-setting templates, career roadmap planner, salary negotiation guides and networking scripts.', true, 9.99, 'USD', 'active'),
+('Personal Statement Samples & Writing Guide', 'Guides & eBooks', '25 winning personal statements for top universities, plus a step-by-step writing guide with expert tips. Covering STEM, Business, Law, Medicine and Arts.', true, 7.99, 'USD', 'active'),
+('Complete Scholarship Application Guide', 'Scholarship Guides', 'The definitive guide to winning scholarships: how to find them, write standout essays, secure strong recommendations, and ace interviews. 120+ pages.', true, 12.99, 'USD', 'active'),
+('Study Abroad Complete Handbook', 'Study Abroad Guides', 'Everything you need to study abroad: visa guides, funding sources, accommodation tips, cultural adjustment advice and scholarship database for 50+ countries.', true, 8.99, 'USD', 'active'),
+('Interview Preparation Masterclass Guide', 'Interview Tips', 'Comprehensive interview prep guide with 200+ common interview questions, STAR method templates, industry-specific question banks and negotiation tactics.', true, 5.99, 'USD', 'active'),
+('How to Write a Winning Cover Letter', 'CV Templates', '10 cover letter templates plus a complete writing guide. Includes templates for job applications, internships, scholarship appeals and cold outreach.', true, 3.99, 'USD', 'active'),
+('Free Job Search Checklist 2026', 'Downloads', 'A free printable job search checklist to keep your applications organized. Track applications, follow-ups and interview schedules.', false, 0, 'USD', 'active'),
+('Free Scholarship Deadline Tracker', 'Downloads', 'Free spreadsheet template to track scholarship deadlines, requirements, and application status across multiple opportunities.', false, 0, 'USD', 'active')
+ON CONFLICT DO NOTHING;
