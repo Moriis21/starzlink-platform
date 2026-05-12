@@ -254,12 +254,17 @@ export const resourcesApi = {
   },
 
   create: async (payload: any) => {
-    const { data, error } = await insforge.database.from("resources").insert([payload]).select();
+    // Ensure access_url is stored
+    const row = { ...payload };
+    if (!row.file_url && row.access_url) row.file_url = row.access_url;
+    const { data, error } = await insforge.database.from("resources").insert([row]).select();
     return { data: { data: data?.[0] }, error };
   },
 
   update: async (id: string, payload: any) => {
-    const { data, error } = await insforge.database.from("resources").update(payload).eq("id", id).select();
+    const row = { ...payload };
+    if (!row.file_url && row.access_url) row.file_url = row.access_url;
+    const { data, error } = await insforge.database.from("resources").update(row).eq("id", id).select();
     return { data: { data: data?.[0] }, error };
   },
 
@@ -471,6 +476,26 @@ export const adminApi = {
     return insforge.database.from("activity_logs").insert([{
       user_id: user?.id ?? null, action, module, details
     }]);
+  },
+
+  /**
+   * Trigger auto-notification to all registered users + newsletter subscribers
+   * Call this after publishing any new job/scholarship/training/resource/campus update
+   */
+  sendAutoNotification: async (payload: {
+    type: "job" | "scholarship" | "training" | "resource" | "campus";
+    title: string;
+    description: string;
+    organization: string;
+    deadline?: string;
+    link: string;
+  }) => {
+    try {
+      const { data, error } = await insforge.functions.invoke("auto-notify", { body: payload });
+      return { data, error };
+    } catch (e: any) {
+      return { data: null, error: e };
+    }
   },
 
   exportCSV: async (type: string) => {

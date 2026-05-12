@@ -48,9 +48,17 @@ export default function NewTrainingPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await trainingsApi.create(form);
+      const { data: created } = await trainingsApi.create(form);
       await adminApi.logAction("create", "trainings", `Created training: ${form.title}`);
-      toast.success("Training published successfully!");
+      adminApi.sendAutoNotification({
+        type: "training",
+        title: form.title,
+        description: form.description,
+        organization: form.provider,
+        deadline: form.start_date,
+        link: `${typeof window !== "undefined" ? window.location.origin : ""}/trainings/${(created as any)?.id || ""}`,
+      }).catch(() => {});
+      toast.success("Training published! Notifications sent to all users.");
       router.push("/admin/trainings");
     } catch (err: any) {
       toast.error(err?.message || "Failed to create training.");

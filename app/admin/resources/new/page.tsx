@@ -67,9 +67,17 @@ export default function NewResourcePage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await resourcesApi.create(form);
+      const { data: created } = await resourcesApi.create(form);
       await adminApi.logAction("create", "resources", `Created resource: ${form.title}`);
-      toast.success("Resource published!");
+      // Only notify for free resources or premium ones - either way inform users
+      adminApi.sendAutoNotification({
+        type: "resource",
+        title: form.title,
+        description: form.description,
+        organization: "StarzLink Resources",
+        link: `${typeof window !== "undefined" ? window.location.origin : ""}/resources`,
+      }).catch(() => {});
+      toast.success("Resource published! Notifications sent to all users.");
       router.push("/admin/resources");
     } catch (err: any) {
       toast.error(err?.message || "Failed to publish resource.");

@@ -41,9 +41,17 @@ export default function NewScholarshipPage() {
     if (!form.deadline) { toast.error("Application deadline is required."); return; }
     setLoading(true);
     try {
-      await scholarshipsApi.create(form);
+      const { data: created } = await scholarshipsApi.create(form);
       await adminApi.logAction("create", "scholarships", `Created scholarship: ${form.title}`);
-      toast.success("Scholarship published successfully!");
+      adminApi.sendAutoNotification({
+        type: "scholarship",
+        title: form.title,
+        description: form.description,
+        organization: form.provider,
+        deadline: form.deadline,
+        link: `${typeof window !== "undefined" ? window.location.origin : ""}/opportunities/scholarships/${(created as any)?.id || ""}`,
+      }).catch(() => {});
+      toast.success("Scholarship published! Notifications sent to all users.");
       router.push("/admin/scholarships");
     } catch (err: any) {
       toast.error(err?.message || "Failed to create scholarship.");

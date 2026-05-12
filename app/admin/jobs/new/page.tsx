@@ -29,9 +29,18 @@ export default function NewJobPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await jobsApi.create(form);
+      const { data: created } = await jobsApi.create(form);
       await adminApi.logAction("create", "jobs", `Created job: ${form.title}`);
-      toast.success("Job posted successfully!");
+      // Auto-notify all registered users
+      adminApi.sendAutoNotification({
+        type: "job",
+        title: form.title,
+        description: form.description,
+        organization: form.company,
+        deadline: form.deadline,
+        link: `${typeof window !== "undefined" ? window.location.origin : ""}/opportunities/jobs/${(created as any)?.id || ""}`,
+      }).catch(() => {});
+      toast.success("Job posted! Notifications sent to all users.");
       router.push("/admin/jobs");
     } catch { toast.error("Failed to create job."); }
     setLoading(false);
