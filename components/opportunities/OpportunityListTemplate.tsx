@@ -23,9 +23,10 @@ interface Props {
   type: string;
   config: OpportunityConfig;
   basePath: string;
+  heroDecoration?: React.ReactNode;
 }
 
-export default function OpportunityListTemplate({ type, config, basePath }: Props) {
+export default function OpportunityListTemplate({ type, config, basePath, heroDecoration }: Props) {
   const { user } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,27 +79,64 @@ export default function OpportunityListTemplate({ type, config, basePath }: Prop
         className="relative py-20 px-4 text-white overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${config.gradientFrom}, ${config.gradientTo})` }}
       >
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Icon className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 leading-tight">{config.title}</h1>
-          <p className="text-white/80 mb-8 max-w-xl mx-auto text-lg">{config.subtitle}</p>
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder={`Search ${config.title.toLowerCase()}...`}
-                className="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none"
-              />
+        {/* Subtle dot-grid overlay */}
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+
+        <div className="relative z-10 max-w-7xl mx-auto">
+          {heroDecoration ? (
+            /* Two-column layout when decoration provided */
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-white/15 border border-white/25 rounded-full px-4 py-2 mb-5 text-sm font-semibold">
+                  <Icon className="w-4 h-4" /> {config.title}
+                </div>
+                <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 leading-tight">{config.title}</h1>
+                <p className="text-white/75 mb-8 text-lg leading-relaxed">{config.subtitle}</p>
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder={`Search ${config.title.toLowerCase()}...`}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none border-0"
+                    />
+                  </div>
+                  <button type="submit" className="px-6 py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-colors whitespace-nowrap">
+                    Search
+                  </button>
+                </form>
+              </div>
+              <div className="hidden lg:flex items-center justify-center">
+                {heroDecoration}
+              </div>
             </div>
-            <button type="submit" className="px-6 py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-colors whitespace-nowrap">
-              Search
-            </button>
-          </form>
+          ) : (
+            /* Centered layout when no decoration */
+            <div className="text-center max-w-4xl mx-auto">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Icon className="w-8 h-8 text-white" />
+              </div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 leading-tight">{config.title}</h1>
+              <p className="text-white/80 mb-8 max-w-xl mx-auto text-lg">{config.subtitle}</p>
+              <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl mx-auto">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder={`Search ${config.title.toLowerCase()}...`}
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none border-0"
+                  />
+                </div>
+                <button type="submit" className="px-6 py-3.5 bg-white/20 hover:bg-white/30 border border-white/30 text-white font-bold rounded-xl transition-colors whitespace-nowrap">
+                  Search
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
 

@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { opportunitiesApi } from "@/lib/api";
 import toast from "react-hot-toast";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 const TYPES = ["internship", "grant", "competition", "volunteer", "study_abroad", "research"];
 const CATEGORIES = ["Technology", "Health", "Education", "Environment", "Arts", "Business", "Social Sciences", "Engineering", "Agriculture", "Law", "Other"];
@@ -158,11 +159,16 @@ export default function EditOpportunityPage() {
               </select>
             </div>
             <div className="mb-4">
-              <label className="text-sm font-medium text-gray-700 block mb-1.5">Image URL</label>
-              <input value={form.image_url ?? ""} onChange={e => set("image_url", e.target.value)} placeholder="https://..." className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f]" />
+              <ImageUploader
+                value={form.image_url ?? ""}
+                onChange={url => set("image_url", url)}
+                folder="opportunities"
+                label="Cover Image"
+                hint="Optional · PNG or JPG · Max 5 MB"
+              />
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-[#1a3c8f] text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors disabled:opacity-60 mb-2">
-              {loading ? "Saving..." : "Save Changes"}
+            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 bg-[#1a3c8f] text-white font-bold py-3 rounded-xl hover:bg-blue-900 transition-colors disabled:opacity-60 mb-2">
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</> : <><Save className="w-4 h-4" />Save Changes</>}
             </button>
             <button type="button" onClick={() => router.back()} className="w-full border border-gray-200 text-gray-600 font-medium py-3 rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
           </div>
