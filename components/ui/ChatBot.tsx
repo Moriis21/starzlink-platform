@@ -338,9 +338,10 @@ export default function ChatBot() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Mobile backdrop */}
+            {/* Mobile backdrop — only covers area above panel */}
             <motion.div
-              className="fixed inset-0 bg-black/30 z-[9997] sm:hidden"
+              className="fixed inset-0 bg-black/20 z-[9997] sm:hidden"
+              style={{ bottom: "72px" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -349,20 +350,19 @@ export default function ChatBot() {
 
             <motion.div
               ref={panelRef}
-              /* Mobile: slides up from bottom full-width; Desktop: floating panel */
+              /* Mobile: full-width bottom sheet; Desktop: floating panel */
               className={[
                 "fixed z-[9998] flex flex-col bg-white overflow-hidden shadow-2xl border border-gray-100",
-                // Mobile: full width, bottom sheet
-                "bottom-0 left-0 right-0 rounded-t-3xl",
-                // Desktop: floating panel above button
+                // Mobile: full width, bottom sheet — rises above toggle button
+                "bottom-[72px] left-2 right-2 rounded-2xl",
+                // Desktop: floating panel above button, fixed width
                 "sm:bottom-[88px] sm:right-6 sm:left-auto sm:rounded-2xl sm:w-[380px]",
               ].join(" ")}
               style={{
                 height: isMinimized
                   ? "auto"
-                  : "min(calc(100svh - 4rem), 620px)",
-                // Mobile full-height when open
-                maxHeight: "calc(100svh - 4rem)",
+                  : "min(calc(100svh - 100px), 600px)",
+                maxHeight: "calc(100svh - 100px)",
               }}
               initial={{ opacity: 0, y: 60 }}
               animate={{ opacity: 1, y: 0 }}
@@ -371,8 +371,6 @@ export default function ChatBot() {
             >
               {/* ── Header ─────────────────────────────────────────────────────── */}
               <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] px-4 py-3.5 flex items-center gap-3 flex-shrink-0">
-                {/* Drag handle on mobile */}
-                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/30 rounded-full sm:hidden" />
 
                 <BotAvatar size="md" />
 

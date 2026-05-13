@@ -74,10 +74,15 @@ export default function HomePage() {
     fetchAll();
   }, []);
 
-  // Cycle campus ticker every 4s
+  // Cycle campus cards every 5s — advance by 3 cards per tick
   useEffect(() => {
     if (campusTicker.length === 0) return;
-    const t = setInterval(() => setTickerIdx(i => (i + 1) % campusTicker.length), 4000);
+    const t = setInterval(() => {
+      setTickerIdx(i => {
+        const next = i + 3;
+        return next >= campusTicker.length ? 0 : next;
+      });
+    }, 5000);
     return () => clearInterval(t);
   }, [campusTicker.length]);
 
@@ -405,47 +410,73 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Campus Updates Ticker ─────────────────────────────────────────── */}
+        {/* ── Campus Updates Carousel ───────────────────────────────────────── */}
         {campusTicker.length > 0 && (
-          <section className="py-12 px-4 bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f]">
+          <section className="py-14 px-4 bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f]">
             <div className="max-w-7xl mx-auto">
-              <div className="flex items-center justify-between mb-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
                 <div>
-                  <p className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-1">LATEST FROM CAMPUS</p>
-                  <h2 className="text-2xl font-extrabold text-white">Campus Updates</h2>
+                  <p className="text-[11px] font-bold text-blue-400 uppercase tracking-widest mb-1.5">Latest From Campus</p>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Campus Updates</h2>
                 </div>
-                <Link href="/campus-updates" className="text-sm text-blue-300 hover:text-white font-semibold flex items-center gap-1">
+                <Link href="/campus-updates" className="hidden sm:flex items-center gap-1 text-sm text-blue-300 hover:text-white font-semibold transition-colors">
                   View All <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
-              {/* Flipping card */}
-              <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 min-h-[120px]">
-                {campusTicker.map((u, i) => (
+
+              {/* Current card — re-renders on tickerIdx change */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {campusTicker.slice(0, 3).map((u, i) => (
                   <motion.div
-                    key={u.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: i === tickerIdx ? 1 : 0, y: i === tickerIdx ? 0 : 20 }}
-                    transition={{ duration: 0.5 }}
-                    className="absolute inset-0 p-6 flex items-start gap-4"
+                    key={`${u.id}-${tickerIdx}`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: i * 0.07 }}
+                    className="bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/15 rounded-2xl p-5 flex flex-col gap-3 transition-colors"
                   >
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Megaphone className="w-5 h-5 text-yellow-300" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-white/15 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Megaphone className="w-4 h-4 text-yellow-300" />
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider">
+                        {u.category || "Update"} · {u.institution?.slice(0, 20) || "Campus"}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-bold text-blue-300 uppercase tracking-wide">{u.category} · {u.institution}</span>
-                      <h3 className="text-white font-bold text-lg leading-tight mt-1 line-clamp-2">{u.title}</h3>
-                      <Link href={`/campus-updates/${u.id}`} className="text-sm text-blue-300 hover:text-white font-semibold mt-2 inline-block">
-                        Read More →
+                    <h3 className="text-white font-bold text-sm leading-snug line-clamp-2 flex-1">
+                      {u.title}
+                    </h3>
+                    <div className="flex items-center justify-between pt-1 border-t border-white/10">
+                      <span className="text-[10px] text-blue-300/70">
+                        {u.date ? new Date(u.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+                      </span>
+                      <Link href={`/campus-updates/${u.id}`}
+                        className="text-xs text-blue-300 hover:text-white font-semibold transition-colors flex items-center gap-1">
+                        Read More <ChevronRight className="w-3 h-3" />
                       </Link>
-                    </div>
-                    {/* Progress dots */}
-                    <div className="flex gap-1.5 flex-shrink-0 mt-1">
-                      {campusTicker.map((_, di) => (
-                        <button key={di} onClick={() => setTickerIdx(di)} className={`w-2 h-2 rounded-full transition-all ${di === tickerIdx ? "bg-white scale-125" : "bg-white/30"}`} />
-                      ))}
                     </div>
                   </motion.div>
                 ))}
+              </div>
+
+              {/* Pagination dots + mobile view all */}
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1.5">
+                  {Array.from({ length: Math.ceil(campusTicker.length / 3) }).map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setTickerIdx(i * 3)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        Math.floor(tickerIdx / 3) === i
+                          ? "w-6 bg-white"
+                          : "w-1.5 bg-white/30 hover:bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <Link href="/campus-updates" className="sm:hidden text-sm text-blue-300 hover:text-white font-semibold flex items-center gap-1">
+                  View All <ChevronRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </section>
