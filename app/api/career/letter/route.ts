@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+export const runtime = "nodejs";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
