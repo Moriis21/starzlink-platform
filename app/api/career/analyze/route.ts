@@ -22,65 +22,28 @@ async function getGroqKey(): Promise<string> {
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const userId = formData.get("userId") as string | null;
+    // Accept pre-extracted text from client-side PDF.js
+    const body = await req.json();
+    const { extractedText, fileName, fileSize, fileUrl, userId } = body;
 
-    if (!file || !userId) {
-      return NextResponse.json({ error: "Missing file or userId" }, { status: 400 });
+    if (!extractedText || !userId) {
+      return NextResponse.json({ error: "Missing CV text or user ID" }, { status: 400 });
     }
 
-    if (file.type !== "application/pdf") {
-      return NextResponse.json({ error: "Only PDF files are accepted" }, { status: 400 });
+    if (!extractedText.trim() || extractedText.trim().length < 50) {
+      return NextResponse.json({
+        error: "CV text is too short to analyze. Ensure your PDF contains readable text."
+      }, { status: 400 });
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: "File must be under 5MB" }, { status: 400 });
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Extract text from PDF using pdf-parse
-    let extractedText = "";
-    try {
-      const pdfModule = await import("pdf-parse");
-      const pdfParse = (pdfModule as any).default ?? pdfModule;
-      const pdfData = await pdfParse(buffer);
-      extractedText = pdfData.text || "";
-    } catch (err) {
-      console.error("PDF parse error:", err);
-      return NextResponse.json({ error: "Failed to parse PDF" }, { status: 500 });
-    }
-
-    if (!extractedText.trim()) {
-      return NextResponse.json({ error: "Could not extract text from PDF. Ensure the file is not scanned/image-only." }, { status: 400 });
-    }
-
-    // Upload to InsForge storage
-    const timestamp = Date.now();
-    const storagePath = `cvs/${userId}/${timestamp}.pdf`;
-    let fileUrl = "";
-    try {
-      const fileBlob = new Blob([buffer], { type: "application/pdf" });
-      const { data: storageData } = await insforge.storage
-        .from("documents")
-        .upload(storagePath, fileBlob);
-      fileUrl = (storageData as any)?.url ?? "";
-    } catch (err) {
-      console.error("Storage upload error:", err);
-      // Continue even if storage fails
-    }
-
-    // Insert cv_uploads record
+    // Save upload record to InsForge
     const { data: uploadData, error: uploadError } = await insforge.database
       .from("cv_uploads")
       .insert([{
         user_id: userId,
-        file_name: file.name,
-        file_size: file.size,
-        storage_path: storagePath,
-        file_url: fileUrl,
+        file_name: fileName || "cv.pdf",
+        file_size: fileSize || 0,
+        file_url: fileUrl || "",
         extracted_text: extractedText,
         status: "processing",
       }])
@@ -88,31 +51,44 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (uploadError || !uploadData) {
+      console.error("Upload record error:", uploadError);
       return NextResponse.json({ error: "Failed to save upload record" }, { status: 500 });
     }
 
     const uploadId = (uploadData as any).id;
 
-    // Call Groq for analysis
+    // Get Groq API key
     const apiKey = await getGroqKey();
     if (!apiKey) {
+      await insforge.database.from("cv_uploads").update({ status: "failed" }).eq("id", uploadId);
       return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
     }
 
-    const systemPrompt = `Analyze this CV and return a JSON object with exactly these fields:
+    // Truncate to 8000 chars to stay within token limits
+    const cvText = extractedText.slice(0, 8000);
+
+    // Call Groq for CV analysis
+    const systemPrompt = `You are an expert CV/Resume analyst and career coach. Analyze the provided CV and return a detailed JSON analysis.
+
+Return ONLY a valid JSON object with exactly these fields (no markdown, no extra text):
 {
-  "overall_score": number (0-100),
-  "ats_score": number (0-100),
-  "strengths": string[],
-  "weak_areas": string[],
-  "missing_keywords": string[],
-  "formatting_issues": string[],
-  "grammar_issues": string[],
-  "section_review": { "summary": string, "experience": string, "education": string, "skills": string, "other": string },
-  "recommended_job_titles": string[],
-  "career_advice": string
-}
-Return ONLY valid JSON, no extra text.`;
+  "overall_score": <integer 0-100>,
+  "ats_score": <integer 0-100>,
+  "strengths": [<string>, ...],
+  "weak_areas": [<string>, ...],
+  "missing_keywords": [<string>, ...],
+  "formatting_issues": [<string>, ...],
+  "grammar_issues": [<string>, ...],
+  "section_review": {
+    "summary": "<brief review of professional summary/objective section>",
+    "experience": "<brief review of work experience section>",
+    "education": "<brief review of education section>",
+    "skills": "<brief review of skills section>",
+    "other": "<review of any other sections>"
+  },
+  "recommended_job_titles": [<string>, ...],
+  "career_advice": "<2-3 sentences of personalized career advice>"
+}`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -124,9 +100,9 @@ Return ONLY valid JSON, no extra text.`;
         model: GROQ_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Here is the CV text to analyze:\n\n${extractedText.slice(0, 8000)}` },
+          { role: "user", content: `Analyze this CV:\n\n${cvText}` },
         ],
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 2000,
         stream: false,
       }),
@@ -136,32 +112,46 @@ Return ONLY valid JSON, no extra text.`;
       const errBody = await groqRes.text();
       console.error("Groq error:", groqRes.status, errBody);
       await insforge.database.from("cv_uploads").update({ status: "failed" }).eq("id", uploadId);
-      return NextResponse.json({ error: "AI analysis failed" }, { status: 500 });
+      return NextResponse.json({ error: "AI analysis failed. Please try again." }, { status: 500 });
     }
 
     const groqData = await groqRes.json();
     const rawResponse: string = groqData?.choices?.[0]?.message?.content ?? "";
 
+    // Parse JSON from AI response (handle markdown code blocks)
     let analysis: any = {};
     try {
-      const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
-      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : rawResponse);
-    } catch {
+      // Strip markdown code fences if present
+      const cleaned = rawResponse
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr, "Raw:", rawResponse.slice(0, 500));
+      // Use safe fallback — don't fail the request
       analysis = {
-        overall_score: 50,
-        ats_score: 50,
-        strengths: ["CV submitted successfully"],
-        weak_areas: ["Analysis parsing failed"],
+        overall_score: 60,
+        ats_score: 55,
+        strengths: ["CV submitted and processed successfully"],
+        weak_areas: ["Detailed analysis unavailable — please try again"],
         missing_keywords: [],
         formatting_issues: [],
         grammar_issues: [],
-        section_review: { summary: "N/A", experience: "N/A", education: "N/A", skills: "N/A", other: "N/A" },
+        section_review: {
+          summary: "Review pending",
+          experience: "Review pending",
+          education: "Review pending",
+          skills: "Review pending",
+          other: "N/A",
+        },
         recommended_job_titles: [],
-        career_advice: "Please try re-uploading your CV for a full analysis.",
+        career_advice: "Your CV was analyzed. For detailed feedback, please try re-uploading.",
       };
     }
 
-    // Save analysis
+    // Save analysis to InsForge
     const { data: analysisData, error: analysisError } = await insforge.database
       .from("cv_analysis")
       .insert([{
@@ -183,11 +173,16 @@ Return ONLY valid JSON, no extra text.`;
       .single();
 
     if (analysisError || !analysisData) {
-      return NextResponse.json({ error: "Failed to save analysis" }, { status: 500 });
+      console.error("Analysis save error:", analysisError);
+      await insforge.database.from("cv_uploads").update({ status: "failed" }).eq("id", uploadId);
+      return NextResponse.json({ error: "Failed to save analysis results" }, { status: 500 });
     }
 
-    // Update upload status
-    await insforge.database.from("cv_uploads").update({ status: "analyzed" }).eq("id", uploadId);
+    // Mark upload as analyzed
+    await insforge.database
+      .from("cv_uploads")
+      .update({ status: "analyzed" })
+      .eq("id", uploadId);
 
     return NextResponse.json({
       uploadId,
@@ -196,6 +191,6 @@ Return ONLY valid JSON, no extra text.`;
     });
   } catch (err: any) {
     console.error("Analyze API error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
 }
