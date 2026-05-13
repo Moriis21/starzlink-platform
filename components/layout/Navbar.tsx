@@ -144,6 +144,9 @@ export default function Navbar() {
                     <Link href="/referrals" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
                       <Users className="w-4 h-4" /> Referrals
                     </Link>
+                    <Link href="/dashboard/career" className="flex items-center gap-2 px-4 py-2 text-sm text-[#1a3c8f] font-semibold hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
+                      <Sparkles className="w-4 h-4 text-yellow-500" /> AI Career
+                    </Link>
                     {(user.role === "admin" || user.role === "super_admin") && (
                       <Link href="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-[#1a3c8f] hover:bg-blue-50 font-medium" onClick={() => setProfileOpen(false)}>
                         <LayoutDashboard className="w-4 h-4" /> Admin Panel
