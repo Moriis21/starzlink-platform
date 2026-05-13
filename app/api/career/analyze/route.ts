@@ -39,6 +39,38 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // ── Credit check (skip if Pro) ──────────────────────────────────────────
+    const now = new Date().toISOString();
+
+    const [subRes, grantRes] = await Promise.all([
+      insforge.database.from("subscriptions").select("status,current_period_end").eq("user_id", userId).maybeSingle(),
+      insforge.database.from("admin_pro_grants").select("is_active,expiry_date,plan_type").eq("user_id", userId).eq("is_active", true).maybeSingle(),
+    ]);
+
+    const isPaidPro = subRes.data?.status === "active" && subRes.data?.current_period_end > now;
+    const isManualPro = grantRes.data?.is_active && (!grantRes.data?.expiry_date || grantRes.data.expiry_date > now);
+    const isLifetime = grantRes.data?.plan_type === "pro_lifetime" && grantRes.data?.is_active;
+    const userIsPro = isPaidPro || isManualPro || isLifetime;
+
+    let creditBalance = 0;
+    let currentUsed = 0;
+
+    if (!userIsPro) {
+      const { data: creditData } = await insforge.database
+        .from("user_credits").select("credits_balance, credits_used").eq("user_id", userId).maybeSingle();
+
+      creditBalance = (creditData as any)?.credits_balance ?? 0;
+      currentUsed = (creditData as any)?.credits_used ?? 0;
+
+      if (creditBalance < 5) {
+        return NextResponse.json({
+          error: "INSUFFICIENT_CREDITS",
+          message: "You have used your free CV analysis credit. Upgrade to Pro to analyze more CVs.",
+          balance: creditBalance,
+        }, { status: 402 });
+      }
+    }
+
     // Save upload record to InsForge
     const { data: uploadData, error: uploadError } = await insforge.database
       .from("cv_uploads")
@@ -72,6 +104,11 @@ export async function POST(req: NextRequest) {
 
     // Call Groq for CV analysis
     const systemPrompt = `You are an expert CV/Resume analyst and career coach. Analyze the provided CV and return a detailed JSON analysis.
+
+IMPORTANT OUTPUT RULES:
+- Return ONLY valid JSON, no markdown, no text outside the JSON
+- In string values, do NOT use: *, **, #, ##, ###, _, __, backticks
+- Keep all text plain and professional
 
 Return ONLY a valid JSON object with exactly these fields (no markdown, no extra text):
 {
@@ -186,6 +223,25 @@ Return ONLY a valid JSON object with exactly these fields (no markdown, no extra
       .from("cv_uploads")
       .update({ status: "analyzed" })
       .eq("id", uploadId);
+
+    // ── Deduct credits for free users ───────────────────────────────────────
+    if (!userIsPro) {
+      await insforge.database.from("user_credits")
+        .update({
+          credits_balance: creditBalance - 5,
+          credits_used: currentUsed + 5,
+          last_credit_use_date: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+
+      await insforge.database.from("credit_transactions").insert([{
+        user_id: userId,
+        transaction_type: "cv_analysis_usage",
+        credits_amount: -5,
+        reason: "CV analysis used 5 credits",
+        related_cv_id: uploadId,
+      }]);
+    }
 
     return NextResponse.json({
       uploadId,

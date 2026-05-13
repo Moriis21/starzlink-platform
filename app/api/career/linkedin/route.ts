@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { checkProAccess } from "@/lib/checkProAccess";
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
@@ -27,6 +28,12 @@ export async function POST(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    // Pro check
+    const isPro = await checkProAccess(userId);
+    if (!isPro) {
+      return NextResponse.json({ error: "Pro subscription required", code: "PRO_REQUIRED" }, { status: 403 });
     }
 
     const apiKey = await getGroqKey();

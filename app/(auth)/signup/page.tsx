@@ -47,6 +47,24 @@ export default function SignupPage() {
         }], { onConflict: "id" });
       }
 
+      // Create user_credits record with 5 free credits
+      try {
+        const userId = data?.user?.id;
+        if (userId) {
+          await insforge.database.from("user_credits").insert([{
+            user_id: userId,
+            credits_balance: 5,
+            credits_used: 0,
+          }]);
+          await insforge.database.from("credit_transactions").insert([{
+            user_id: userId,
+            transaction_type: "free_signup_credit",
+            credits_amount: 5,
+            reason: "Welcome! 5 free credits for your first CV analysis.",
+          }]);
+        }
+      } catch {}
+
       if (data?.requireEmailVerification) {
         toast.success("Account created! Check your email for a 6-digit verification code.");
         router.push(`/verify-email?email=${encodeURIComponent(form.email)}`);

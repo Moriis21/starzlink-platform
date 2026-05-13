@@ -2,10 +2,12 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { insforge } from "@/lib/insforge";
 import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import CreditBadge from "@/components/career/CreditBadge";
 
 type Step = "idle" | "reading" | "extracting" | "uploading" | "analyzing" | "done" | "error";
 
@@ -173,6 +175,11 @@ export default function UploadPage() {
       }
 
       if (!res.ok) {
+        if (data?.error === "INSUFFICIENT_CREDITS") {
+          throw new Error(
+            "You have no credits remaining. Upgrade to Pro to continue analyzing CVs."
+          );
+        }
         throw new Error(data?.error ?? `Analysis failed (HTTP ${res.status}). Please try again.`);
       }
 
@@ -193,9 +200,12 @@ export default function UploadPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-gray-900">Analyze My CV</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Upload your CV for a comprehensive AI-powered analysis</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900">Analyze My CV</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Upload your CV for a comprehensive AI-powered analysis</p>
+        </div>
+        <CreditBadge />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -261,7 +271,19 @@ export default function UploadPage() {
                   className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm"
                 >
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
+                  <div>
+                    <span>{error}</span>
+                    {error.includes("no credits") && (
+                      <div className="mt-2">
+                        <Link
+                          href="/dashboard/career/upgrade"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] px-3 py-1.5 rounded-lg hover:opacity-90 transition-all"
+                        >
+                          Upgrade to Pro
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
 

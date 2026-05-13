@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { checkProAccess } from "@/lib/checkProAccess";
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
@@ -29,6 +30,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing uploadId or userId" }, { status: 400 });
     }
 
+    // Pro check
+    const isPro = await checkProAccess(userId);
+    if (!isPro) {
+      return NextResponse.json({ error: "Pro subscription required", code: "PRO_REQUIRED" }, { status: 403 });
+    }
+
     // Fetch the extracted text
     const { data: uploadData, error: uploadError } = await insforge.database
       .from("cv_uploads")
@@ -53,10 +60,38 @@ export async function POST(req: NextRequest) {
     }
 
     const systemPrompt = `You are a professional CV writer. Rewrite this CV professionally.
-Rules: Keep ALL real information (jobs, degrees, names, dates). Do NOT invent anything.
-Improve: grammar, structure, formatting, ATS compatibility, professional tone, action verbs.
-Return the complete improved CV as clean plain text with clear sections.
-Start with the person's name as a heading. Use standard CV sections.`;
+
+STRICT RULES:
+- Keep ALL real information. Never invent jobs, degrees, or certificates.
+- Use PLAIN TEXT ONLY. Do not use: *, **, #, ##, _, __, backticks, or any markdown.
+- Use ALL CAPS for section headers (PROFESSIONAL SUMMARY, WORK EXPERIENCE, EDUCATION, SKILLS, etc.)
+- Use clean spacing between sections (two line breaks)
+- For bullet points, use the plain dash character: -
+- Do NOT add any preamble, AI notes, or system messages
+- Start directly with the person's name
+
+Example section format:
+PROFESSIONAL SUMMARY
+
+Results-driven professional with 5 years of experience in...
+
+WORK EXPERIENCE
+
+Position Title
+Company Name | City | Month Year - Month Year
+
+- Improved team productivity by 30% through implementation of...
+- Led a cross-functional team of 8 to deliver...
+
+EDUCATION
+
+Bachelor of Science in Computer Science
+University Name | Year
+
+SKILLS
+
+Technical Skills: JavaScript, React, Python, SQL
+Soft Skills: Leadership, Communication, Problem-Solving`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

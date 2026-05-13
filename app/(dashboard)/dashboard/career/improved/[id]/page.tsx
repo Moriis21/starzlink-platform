@@ -20,6 +20,20 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+// ── Clean CV text — strips all markdown symbols ─────────────────────────────
+
+function cleanCVText(text: string): string {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/#{1,6}\s/g, "")
+    .replace(/`{1,3}/g, "")
+    .replace(/_{1,2}/g, "")
+    .replace(/^\s*[-•]\s/gm, "• ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export default function ImprovedCVPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -32,6 +46,18 @@ export default function ImprovedCVPage() {
   const [view, setView] = useState<"after" | "before">("after");
   const [originalText, setOriginalText] = useState("");
   const [upgradeModal, setUpgradeModal] = useState(false);
+
+  // ── Anti-copy protection for free users ──────────────────────────────────
+  useEffect(() => {
+    if (isPro) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && ["c", "p", "s", "a"].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isPro]);
 
   useEffect(() => {
     if (!id || !user?.id) return;
@@ -49,8 +75,9 @@ export default function ImprovedCVPage() {
           setError("Improved CV not found.");
         } else {
           const d = data as any;
-          setContent(d.improved_content ?? "");
-          setEditedContent(d.improved_content ?? "");
+          const cleaned = cleanCVText(d.improved_content ?? "");
+          setContent(cleaned);
+          setEditedContent(cleaned);
           setOriginalText(d.cv_uploads?.extracted_text ?? "");
         }
       } catch {
@@ -64,7 +91,6 @@ export default function ImprovedCVPage() {
 
   const downloadPDF = () => {
     if (!isPro) { setUpgradeModal(true); return; }
-    // Use print CSS
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`
@@ -96,16 +122,6 @@ export default function ImprovedCVPage() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadText = () => {
-    const blob = new Blob([editedContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "improved-cv.txt";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   if (loading || subLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -120,15 +136,15 @@ export default function ImprovedCVPage() {
         <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
         <p className="text-gray-700 font-semibold">{error}</p>
         <Link href="/dashboard/career" className="mt-4 inline-block text-[#1a3c8f] font-semibold hover:underline text-sm">
-          ← Back to Career Dashboard
+          Back to Career Dashboard
         </Link>
       </div>
     );
   }
 
-  // Calculate blur cutoff: free users see 40% of lines
+  // Calculate blur cutoff — free users see 30% of lines
   const lines = editedContent.split("\n");
-  const cutoffLine = Math.floor(lines.length * 0.4);
+  const cutoffLine = Math.floor(lines.length * 0.3);
   const visibleContent = lines.slice(0, cutoffLine).join("\n");
   const blurredContent = lines.slice(cutoffLine).join("\n");
 
@@ -157,6 +173,34 @@ export default function ImprovedCVPage() {
           </span>
         )}
       </div>
+
+      {/* Free user upgrade notice */}
+      {!isPro && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">
+              You have used your free CV analysis credit.
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Upgrade to Pro to download, copy, export, and unlock full career tools.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Link
+              href="/dashboard/career/upgrade"
+              className="px-4 py-2 bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white text-xs font-bold rounded-xl hover:opacity-90 transition-all"
+            >
+              Upgrade Monthly ($5)
+            </Link>
+            <Link
+              href="/dashboard/career/upgrade"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold rounded-xl hover:opacity-90 transition-all"
+            >
+              Upgrade Yearly ($50)
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* View Toggle */}
       <div className="flex items-center gap-2">
@@ -204,19 +248,28 @@ export default function ImprovedCVPage() {
             />
           </div>
         ) : (
-          <div className="p-6 relative">
+          <div
+            className="p-6 relative"
+            onContextMenu={(e) => e.preventDefault()}
+          >
             <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-3">Improved CV Preview</p>
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+            <pre
+              className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed"
+              style={{ userSelect: "none" }}
+            >
               {visibleContent}
             </pre>
             <div className="relative">
-              <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed" style={{ filter: "blur(4px)", userSelect: "none" }}>
+              <pre
+                className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed"
+                style={{ filter: "blur(4px)", userSelect: "none" }}
+              >
                 {blurredContent}
               </pre>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white flex items-end justify-center pb-8">
                 <div className="text-center">
                   <Lock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-700 font-bold text-sm">Upgrade to Pro to view the full improved CV</p>
+                  <p className="text-gray-700 font-bold text-sm">Upgrade to Pro to Download</p>
                   <button
                     onClick={() => setUpgradeModal(true)}
                     className="mt-3 bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all text-sm inline-flex items-center gap-2"
@@ -234,13 +287,12 @@ export default function ImprovedCVPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button
           onClick={downloadPDF}
-          className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all text-sm font-semibold ${
+          className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all text-sm font-semibold relative ${
             isPro
               ? "border-[#1a3c8f] text-[#1a3c8f] hover:bg-blue-50"
               : "border-gray-200 text-gray-400 cursor-pointer hover:border-yellow-400"
           }`}
         >
-          {!isPro && <Lock className="w-3.5 h-3.5 absolute" />}
           <Download className="w-5 h-5" />
           <span>Download PDF</span>
           {!isPro && <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Pro</span>}
