@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { insforge } from "@/lib/insforge";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-// ── Fetch API key from InsForge settings DB (works in all environments) ────────
+// Fetch Groq API key from InsForge settings DB at runtime — no secrets in code
+let _cachedKey: string | null = null;
 async function getGroqKey(): Promise<string> {
-  // 1. Prefer env var (set this on your hosting platform)
   if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-
-  // 2. Fallback: read from InsForge settings table
+  if (_cachedKey) return _cachedKey;
   try {
-    const BASE = "https://8qn72bza.us-east.insforge.app";
-    const KEY  = "ik_6d6c0108a931deb33707cad6a802a9ed";
-    const res  = await fetch(
-      `${BASE}/rest/v1/settings?key=eq.groq_api_key&select=value`,
-      { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` }, cache: "no-store" }
-    );
-    const rows = await res.json();
-    return rows?.[0]?.value ?? "";
+    const { data } = await insforge.database
+      .from("settings")
+      .select("value")
+      .eq("key", "groq_api_key")
+      .single();
+    _cachedKey = (data as any)?.value ?? "";
+    return _cachedKey!;
   } catch {
     return "";
   }
