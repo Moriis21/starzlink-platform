@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, SearchX, GraduationCap, Briefcase, BookOpen, Megaphone } from "lucide-react";
+import { Search, SearchX, GraduationCap, Briefcase, BookOpen, Megaphone, Globe, Trophy, Heart, FlaskConical, DollarSign } from "lucide-react";
 import { jobsApi, scholarshipsApi, trainingsApi } from "@/lib/api";
 import OpportunityCard from "@/components/ui/OpportunityCard";
 import Pagination from "@/components/ui/Pagination";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
 import { Job, Scholarship, Training } from "@/types";
+import Link from "next/link";
 
 type Category = "all" | "jobs" | "scholarships" | "trainings";
 
@@ -129,6 +130,24 @@ export default function OpportunitiesPage() {
                 {cat === "all" ? "All Categories" : cat}
               </button>
             ))}
+            <Link href="/opportunities/internships" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <Briefcase className="w-3.5 h-3.5" /> Internships
+            </Link>
+            <Link href="/opportunities/grants" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <DollarSign className="w-3.5 h-3.5" /> Grants
+            </Link>
+            <Link href="/opportunities/competitions" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <Trophy className="w-3.5 h-3.5" /> Competitions
+            </Link>
+            <Link href="/opportunities/volunteer" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <Heart className="w-3.5 h-3.5" /> Volunteer
+            </Link>
+            <Link href="/opportunities/study-abroad" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <Globe className="w-3.5 h-3.5" /> Study Abroad
+            </Link>
+            <Link href="/opportunities/research" className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 border border-gray-200 hover:border-[#1a3c8f] hover:text-[#1a3c8f] bg-white transition-colors flex items-center gap-1">
+              <FlaskConical className="w-3.5 h-3.5" /> Research
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">Sort by:</span>

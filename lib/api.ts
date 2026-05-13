@@ -582,3 +582,147 @@ export const storageApi = {
     return { data, error, url: data?.url ?? null };
   },
 };
+
+// ── Opportunities (new types) ──────────────────────────────────────────────
+export const opportunitiesApi = {
+  getAll: async (params: ListParams & { opportunity_type?: string } = {}) => {
+    const { from, to, p, l } = paginate(params.page, params.limit ?? 12);
+    let q = insforge.database.from("opportunities").select("*", { count: "exact" });
+    if (params.opportunity_type) q = q.eq("opportunity_type", params.opportunity_type);
+    if (params.status) q = q.eq("status", params.status); else q = q.eq("status", "active");
+    if (params.search) q = q.ilike("title", `%${params.search}%`);
+    if (params.category) q = q.eq("category", params.category);
+    q = q.order("created_at", { ascending: false }).range(from, to);
+    const { data, error, count } = await q;
+    return { data: { data: data ?? [], total: count ?? 0, page: p, per_page: l, total_pages: Math.ceil((count ?? 0) / l) }, error };
+  },
+  getOne: async (id: string) => {
+    const { data, error } = await insforge.database.from("opportunities").select("*").eq("id", id).single();
+    return { data: { data }, error };
+  },
+  create: async (payload: any) => {
+    const { data, error } = await insforge.database.from("opportunities").insert([payload]).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  update: async (id: string, payload: any) => {
+    const { data, error } = await insforge.database.from("opportunities").update(payload).eq("id", id).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  delete: async (id: string) => insforge.database.from("opportunities").delete().eq("id", id),
+};
+
+// ── Events ─────────────────────────────────────────────────────────────────
+export const eventsApi = {
+  getAll: async (params: ListParams = {}) => {
+    const { from, to, p, l } = paginate(params.page, params.limit ?? 20);
+    let q = insforge.database.from("events").select("*", { count: "exact" });
+    if (params.status) q = q.eq("status", params.status);
+    if (params.search) q = q.ilike("title", `%${params.search}%`);
+    if (params.event_type) q = q.eq("event_type", params.event_type);
+    q = q.order("event_date", { ascending: true }).range(from, to);
+    const { data, error, count } = await q;
+    return { data: { data: data ?? [], total: count ?? 0, page: p, per_page: l, total_pages: Math.ceil((count ?? 0) / l) }, error };
+  },
+  getOne: async (id: string) => {
+    const { data, error } = await insforge.database.from("events").select("*").eq("id", id).single();
+    return { data: { data }, error };
+  },
+  create: async (payload: any) => {
+    const { data, error } = await insforge.database.from("events").insert([payload]).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  update: async (id: string, payload: any) => {
+    const { data, error } = await insforge.database.from("events").update(payload).eq("id", id).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  delete: async (id: string) => insforge.database.from("events").delete().eq("id", id),
+};
+
+// ── Points ─────────────────────────────────────────────────────────────────
+export const pointsApi = {
+  getUserPoints: async (userId: string) => {
+    const { data } = await insforge.database.from("profiles").select("points").eq("id", userId).single();
+    return (data as any)?.points ?? 0;
+  },
+  addPoints: async (userId: string, action: string, points: number, description?: string) => {
+    await insforge.database.from("point_transactions").insert([{ user_id: userId, action, points, description }]);
+    const current = await pointsApi.getUserPoints(userId);
+    await insforge.database.from("profiles").update({ points: current + points }).eq("id", userId);
+  },
+  getLeaderboard: async (limit = 20) => {
+    const { data } = await insforge.database.from("profiles").select("id,full_name,points,profile_image,user_type").order("points", { ascending: false }).limit(limit);
+    return data ?? [];
+  },
+  getHistory: async (userId: string) => {
+    const { data } = await insforge.database.from("point_transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+    return data ?? [];
+  },
+};
+
+// ── Referrals ──────────────────────────────────────────────────────────────
+export const referralsApi = {
+  getMyReferrals: async (userId: string) => {
+    const { data } = await insforge.database.from("referrals").select("*").eq("referrer_id", userId).order("created_at", { ascending: false });
+    return data ?? [];
+  },
+  submit: async (referrerCode: string, referredEmail: string) => {
+    const { data: referrer } = await insforge.database.from("profiles").select("id").eq("referral_code", referrerCode).single();
+    if (!referrer) return { error: "Invalid referral code" };
+    const { error } = await insforge.database.from("referrals").insert([{ referrer_id: (referrer as any).id, referred_email: referredEmail, status: "pending" }]);
+    return { error };
+  },
+  complete: async (referralId: string, referredUserId: string, referrerId: string) => {
+    await insforge.database.from("referrals").update({ status: "completed", referred_user_id: referredUserId, points_awarded: 100 }).eq("id", referralId);
+    await pointsApi.addPoints(referrerId, "referral_complete", 100, "Friend joined via your referral link");
+  },
+};
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+export const analyticsApi = {
+  track: async (eventType: string, contentType: string, contentId: string, userId?: string, metadata?: any) => {
+    try {
+      await insforge.database.from("analytics_events").insert([{ event_type: eventType, content_type: contentType, content_id: contentId, user_id: userId ?? null, metadata }]);
+    } catch {}
+  },
+  getTopContent: async (contentType: string, limit = 10) => {
+    const { data } = await insforge.database.from("analytics_events").select("content_id").eq("content_type", contentType).eq("event_type", "apply_click");
+    if (!data) return [];
+    const counts: Record<string, number> = {};
+    (data as any[]).forEach((r: any) => { counts[r.content_id] = (counts[r.content_id] || 0) + 1; });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, limit).map(([id, count]) => ({ content_id: id, count }));
+  },
+  getSummary: async () => {
+    const [views, clicks, saves] = await Promise.all([
+      insforge.database.from("analytics_events").select("id", { count: "exact" }).eq("event_type", "view").limit(1),
+      insforge.database.from("analytics_events").select("id", { count: "exact" }).eq("event_type", "apply_click").limit(1),
+      insforge.database.from("analytics_events").select("id", { count: "exact" }).eq("event_type", "save").limit(1),
+    ]);
+    return { views: views.count ?? 0, clicks: clicks.count ?? 0, saves: saves.count ?? 0 };
+  },
+  getDailyEvents: async (days = 30) => {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await insforge.database.from("analytics_events").select("created_at,event_type").gte("created_at", since).order("created_at", { ascending: true });
+    return data ?? [];
+  },
+};
+
+// ── Email Campaigns ────────────────────────────────────────────────────────
+export const campaignsApi = {
+  getAll: async (params: ListParams = {}) => {
+    const { from, to } = paginate(params.page, params.limit ?? 20);
+    const { data, error, count } = await insforge.database.from("email_campaigns").select("*", { count: "exact" }).order("created_at", { ascending: false }).range(from, to);
+    return { data: { data: data ?? [], total: count ?? 0 }, error };
+  },
+  create: async (payload: any) => {
+    const { data, error } = await insforge.database.from("email_campaigns").insert([payload]).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  update: async (id: string, payload: any) => {
+    const { data, error } = await insforge.database.from("email_campaigns").update(payload).eq("id", id).select();
+    return { data: { data: data?.[0] }, error };
+  },
+  delete: async (id: string) => insforge.database.from("email_campaigns").delete().eq("id", id),
+  send: async (id: string) => {
+    await insforge.database.from("email_campaigns").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", id);
+  },
+};

@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
-  Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList
+  Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
+  Calendar, Trophy
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -29,6 +30,7 @@ const menuItems = [
       { label: "Jobs", href: "/admin/jobs" },
       { label: "Scholarships", href: "/admin/scholarships" },
       { label: "Trainings", href: "/admin/trainings" },
+      { label: "Opportunities", href: "/admin/opportunities" },
     ]
   },
   { label: "Campus Updates", href: "/admin/campus-updates", icon: Megaphone },
@@ -38,6 +40,9 @@ const menuItems = [
   { label: "Submissions", href: "/admin/submissions", icon: BookOpen },
   { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: true },
   { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
+  { label: "Events", href: "/admin/events", icon: Calendar },
+  { label: "Campaigns", href: "/admin/campaigns", icon: Mail },
+  { label: "Leaderboard", href: "/admin/leaderboard", icon: Trophy },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Reports", href: "/admin/reports", icon: TrendingUp },
   { label: "Activity Logs", href: "/admin/activity-logs", icon: ClipboardList },

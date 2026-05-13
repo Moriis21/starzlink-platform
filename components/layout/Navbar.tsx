@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, Search, LogOut, User, LayoutDashboard } from "lucide-react";
+import { Menu, X, ChevronDown, Search, LogOut, User, LayoutDashboard, Bookmark, Bell, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/ui/Logo";
@@ -18,6 +18,12 @@ const navLinks = [
       { label: "All Opportunities", href: "/opportunities" },
       { label: "Jobs", href: "/opportunities/jobs" },
       { label: "Scholarships", href: "/opportunities/scholarships" },
+      { label: "Internships", href: "/opportunities/internships" },
+      { label: "Grants & Fellowships", href: "/opportunities/grants" },
+      { label: "Competitions", href: "/opportunities/competitions" },
+      { label: "Volunteer", href: "/opportunities/volunteer" },
+      { label: "Study Abroad", href: "/opportunities/study-abroad" },
+      { label: "Research", href: "/opportunities/research" },
     ],
   },
   { label: "Trainings", href: "/trainings" },
@@ -125,6 +131,18 @@ export default function Navbar() {
                     </Link>
                     <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
                       <User className="w-4 h-4" /> Profile
+                    </Link>
+                    <Link href="/saved" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
+                      <Bookmark className="w-4 h-4" /> Saved Items
+                    </Link>
+                    <Link href="/notifications" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
+                      <Bell className="w-4 h-4" /> Notifications
+                    </Link>
+                    <Link href="/recommendations" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
+                      <Sparkles className="w-4 h-4" /> For You
+                    </Link>
+                    <Link href="/referrals" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50" onClick={() => setProfileOpen(false)}>
+                      <Users className="w-4 h-4" /> Referrals
                     </Link>
                     {(user.role === "admin" || user.role === "super_admin") && (
                       <Link href="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-[#1a3c8f] hover:bg-blue-50 font-medium" onClick={() => setProfileOpen(false)}>
