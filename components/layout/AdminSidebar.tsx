@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
   Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
-  Calendar, Trophy
+  Calendar, Trophy, Gift
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -43,6 +43,7 @@ const menuItems = [
   { label: "Events", href: "/admin/events", icon: Calendar },
   { label: "Campaigns", href: "/admin/campaigns", icon: Mail },
   { label: "Leaderboard", href: "/admin/leaderboard", icon: Trophy },
+  { label: "Redemptions", href: "/admin/redemptions", icon: Gift },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Reports", href: "/admin/reports", icon: TrendingUp },
   { label: "Activity Logs", href: "/admin/activity-logs", icon: ClipboardList },

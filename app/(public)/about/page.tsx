@@ -1,12 +1,15 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import BrandImage from "@/components/ui/BrandImage";
+import { insforge } from "@/lib/insforge";
 import {
   Target, Eye, CheckCircle, Shield, Star, Globe, Users, TrendingUp,
   ChevronRight, BadgeCheck, LayoutGrid, Bell, Monitor, Heart, Award, Lightbulb, Play
 } from "lucide-react";
 
-export const metadata: Metadata = { title: "About Us" };
+// metadata removed — this is now a client component
 
 const stats = [
   { value: "50K+", label: "Active Users", icon: Users },
@@ -34,7 +37,30 @@ const whyChoose = [
 
 // Partners are now rendered inline with university data — see /partners page
 
+interface Partner {
+  id: string;
+  name: string;
+  abbreviation: string;
+  color: string;
+  logo_url?: string;
+  founded?: string;
+  location?: string;
+}
+
 export default function AboutPage() {
+  const [partners, setPartners] = useState<Partner[]>([]);
+
+  useEffect(() => {
+    insforge.database
+      .from("partners")
+      .select("id,name,abbreviation,color,logo_url,founded,location")
+      .eq("is_active", true)
+      .eq("scope", "local")
+      .order("founded", { ascending: true })
+      .limit(8)
+      .then(({ data }) => setPartners((data as any) ?? []));
+  }, []);
+
   return (
     <div>
       {/* Hero — with team image */}
@@ -207,34 +233,38 @@ export default function AboutPage() {
             </Link>
           </div>
 
-          {/* University logos grid */}
+          {/* University logos grid — fetched live from DB */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[
-              { abbr: "UL", name: "University of Liberia", color: "#1a3c8f", bg: "#e8f0fe", year: "1862" },
-              { abbr: "CU", name: "Cuttington University", color: "#7c3aed", bg: "#ede9fe", year: "1889" },
-              { abbr: "AMEU", name: "A.M.E. University", color: "#059669", bg: "#d1fae5", year: "1997" },
-              { abbr: "UMU", name: "United Methodist University", color: "#d97706", bg: "#fef3c7", year: "1996" },
-              { abbr: "TU", name: "Tubman University", color: "#0891b2", bg: "#cffafe", year: "2009" },
-              { abbr: "BWI", name: "Booker Washington Institute", color: "#16a34a", bg: "#dcfce7", year: "1929" },
-              { abbr: "SMP", name: "Stella Maris Polytechnic", color: "#dc2626", bg: "#fee2e2", year: "1977" },
-              { abbr: "MPCHS", name: "Mother Patern College", color: "#be185d", bg: "#fce7f3", year: "1971" },
-            ].map(uni => (
-              <Link
-                key={uni.abbr}
-                href="/partners"
-                className="group flex flex-col items-center bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:-translate-y-1 transition-all text-center"
-              >
-                {/* Logo badge */}
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-sm mb-2 group-hover:scale-110 transition-transform"
-                  style={{ background: uni.color }}
-                >
-                  {uni.abbr.length <= 3 ? uni.abbr : uni.abbr.slice(0, 2)}
-                </div>
-                <p className="text-xs font-semibold text-gray-700 leading-tight line-clamp-2">{uni.name}</p>
-                <p className="text-[10px] text-gray-400 mt-1">Est. {uni.year}</p>
-              </Link>
-            ))}
+            {partners.length === 0
+              ? Array(8).fill(0).map((_, i) => (
+                  <div key={i} className="bg-gray-100 rounded-2xl h-28 animate-pulse" />
+                ))
+              : partners.map(p => (
+                  <Link
+                    key={p.id}
+                    href="/partners"
+                    className="group flex flex-col items-center bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:-translate-y-1 transition-all text-center"
+                  >
+                    {p.logo_url ? (
+                      <img
+                        src={p.logo_url}
+                        alt={p.name}
+                        className="w-14 h-14 object-contain rounded-xl mb-2 group-hover:scale-110 transition-transform"
+                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-sm mb-2 group-hover:scale-110 transition-transform"
+                        style={{ backgroundColor: p.color }}
+                      >
+                        {p.abbreviation.slice(0, 3)}
+                      </div>
+                    )}
+                    <p className="text-xs font-semibold text-gray-700 leading-tight line-clamp-2">{p.name}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">{p.founded ? `Est. ${p.founded}` : p.location || ""}</p>
+                  </Link>
+                ))
+            }
           </div>
 
           <div className="mt-6 text-center">

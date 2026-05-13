@@ -672,8 +672,54 @@ export const referralsApi = {
     return { error };
   },
   complete: async (referralId: string, referredUserId: string, referrerId: string) => {
-    await insforge.database.from("referrals").update({ status: "completed", referred_user_id: referredUserId, points_awarded: 100 }).eq("id", referralId);
-    await pointsApi.addPoints(referrerId, "referral_complete", 100, "Friend joined via your referral link");
+    // 1 referral = 5 pts · 20 referrals (100 pts) = $1 platform credit
+    await insforge.database.from("referrals").update({ status: "completed", referred_user_id: referredUserId, points_awarded: 5 }).eq("id", referralId);
+    await pointsApi.addPoints(referrerId, "referral_complete", 5, "Friend joined via your referral link (+5 pts)");
+  },
+};
+
+// ── Redemptions ────────────────────────────────────────────────────────────
+export const redemptionsApi = {
+  /** User submits a request to redeem 100pts ($1) for a paid resource */
+  request: async (userId: string, resourceRequested: string, pointsToUse: number) => {
+    const usdValue = +(pointsToUse / 100).toFixed(2);
+    const { data, error } = await insforge.database
+      .from("point_redemptions")
+      .insert([{ user_id: userId, points_used: pointsToUse, usd_value: usdValue, resource_requested: resourceRequested, status: "pending" }])
+      .select();
+    return { data: { data: data?.[0] }, error };
+  },
+  /** Get current user's redemption history */
+  getMyRedemptions: async (userId: string) => {
+    const { data } = await insforge.database
+      .from("point_redemptions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+    return data ?? [];
+  },
+  /** Admin: get all pending/all redemptions */
+  adminGetAll: async (status?: string) => {
+    let q = insforge.database
+      .from("point_redemptions")
+      .select("*, profiles(full_name, email, points)")
+      .order("created_at", { ascending: false });
+    if (status) q = q.eq("status", status);
+    const { data } = await q;
+    return data ?? [];
+  },
+  /** Admin: approve a redemption request — deduct points and mark approved */
+  approve: async (id: string, userId: string, pointsUsed: number, adminNote?: string) => {
+    await insforge.database.from("point_redemptions").update({ status: "approved", admin_note: adminNote ?? null, processed_at: new Date().toISOString() }).eq("id", id);
+    // Deduct the points from the user
+    const { data: profile } = await insforge.database.from("profiles").select("points").eq("id", userId).single();
+    const current = (profile as any)?.points ?? 0;
+    await insforge.database.from("profiles").update({ points: Math.max(0, current - pointsUsed) }).eq("id", userId);
+    await insforge.database.from("point_transactions").insert([{ user_id: userId, action: "redemption_approved", points: -pointsUsed, description: "Points redeemed for platform resource" }]);
+  },
+  /** Admin: reject a redemption request */
+  reject: async (id: string, adminNote?: string) => {
+    await insforge.database.from("point_redemptions").update({ status: "rejected", admin_note: adminNote ?? null, processed_at: new Date().toISOString() }).eq("id", id);
   },
 };
 
