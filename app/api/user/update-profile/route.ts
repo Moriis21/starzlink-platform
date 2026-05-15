@@ -15,6 +15,26 @@ export async function POST(req: NextRequest) {
     }
 
     const authKey = process.env.INSFORGE_SERVICE_KEY || ANON_KEY;
+    const isAdminOverride = body.adminOverride === true;
+
+    // Block updates for completed profiles unless admin/super_admin is overriding
+    if (!isAdminOverride) {
+      try {
+        const { data: current } = await insforge.database
+          .from("profiles")
+          .select("profile_completed, role")
+          .eq("id", userId)
+          .maybeSingle();
+
+        const p = current as any;
+        if (p?.profile_completed === true) {
+          return NextResponse.json({
+            error: "Profile is locked. Only an Admin can make changes to a completed profile.",
+            code: "PROFILE_LOCKED",
+          }, { status: 403 });
+        }
+      } catch {}
+    }
 
     // Build payload — only non-empty values
     const allowed = [

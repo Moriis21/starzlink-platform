@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { insforge } from "@/lib/insforge";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import toast from "react-hot-toast";
-import { User, Phone, MapPin, GraduationCap, Save, Loader2, CheckCircle } from "lucide-react";
+import { User, Phone, MapPin, GraduationCap, Save, Loader2, CheckCircle, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const COUNTRIES = [
@@ -155,6 +155,59 @@ export default function ProfileSettingsPage() {
     );
   }
 
+  // ── Locked state — profile already completed ──────────────────────────────
+  if (profileCompleted) {
+    return (
+      <div className="max-w-3xl">
+        <Breadcrumb crumbs={[{ label: "Settings" }, { label: "Profile" }]} />
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900">Profile Settings</h1>
+            <p className="text-gray-500 text-sm mt-0.5">Your profile information.</p>
+          </div>
+          <span className="flex items-center gap-1.5 text-sm text-green-600 font-semibold bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+            <CheckCircle className="w-4 h-4" /> Profile Complete
+          </span>
+        </div>
+
+        {/* Locked notice */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5 flex items-start gap-3">
+          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Lock className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="font-bold text-amber-800 mb-0.5">Profile Locked</p>
+            <p className="text-sm text-amber-700">
+              Your profile is complete and has been locked. To make changes, please contact an Admin or Super Admin who can unlock your profile.
+            </p>
+          </div>
+        </div>
+
+        {/* Read-only view of saved data */}
+        <div className="space-y-4">
+          {[
+            { title: "Personal Information", rows: [["Full Name", form.full_name], ["Email", form.email], ["Phone", form.phone], ["WhatsApp", form.whatsapp_number], ["User Type", form.user_type], ["Bio", form.bio]] },
+            { title: "Location", rows: [["Country", form.country], ["County / State", form.county_state], ["City / Community", form.city_community], ["Current Location", form.current_location], ["Address", form.address_description]] },
+            { title: "Language & Occupation", rows: [["Preferred Language", form.preferred_language], ["Occupation", form.occupation], ["Institution", form.institution_workplace]] },
+            { title: "Education & Career", rows: [["Education Level", form.education_level], ["Area of Interest", form.area_of_interest], ["Career Goal", form.career_goal]] },
+          ].map(section => (
+            <div key={section.title} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <h2 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide text-gray-500">{section.title}</h2>
+              <div className="space-y-2">
+                {section.rows.filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label} className="flex justify-between py-1.5 border-b border-gray-50 last:border-0">
+                    <span className="text-sm text-gray-400 w-40 flex-shrink-0">{label}</span>
+                    <span className="text-sm font-medium text-gray-900 text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl">
       <Breadcrumb crumbs={[{ label: "Settings" }, { label: "Profile" }]} />
@@ -162,13 +215,8 @@ export default function ProfileSettingsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900">Profile Settings</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Update your personal information and preferences.</p>
+          <p className="text-gray-500 text-sm mt-0.5">Complete your profile to unlock full platform access.</p>
         </div>
-        {profileCompleted && (
-          <span className="flex items-center gap-1.5 text-sm text-green-600 font-semibold bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
-            <CheckCircle className="w-4 h-4" /> Profile Complete
-          </span>
-        )}
       </div>
 
       <div className="space-y-5">

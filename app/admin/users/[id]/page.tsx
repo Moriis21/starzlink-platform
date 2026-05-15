@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import {
   User, Mail, Phone, MapPin, GraduationCap, Briefcase, Globe,
   ArrowLeft, Shield, Bookmark, FileText, CreditCard, CheckCircle,
-  AlertCircle, Calendar, RefreshCw, ShieldOff, Trash2, Edit3
+  AlertCircle, Calendar, RefreshCw, ShieldOff, Trash2, Edit3, Lock
 } from "lucide-react";
 
 interface Profile {
@@ -75,6 +75,39 @@ export default function AdminUserDetailPage() {
       setProfile(p => p ? { ...p, is_suspended: newVal } : p);
       toast.success(newVal ? "User suspended." : "User reactivated.");
     } catch { toast.error("Action failed."); }
+    setActionLoading(false);
+  };
+
+  const handleUnlockProfile = async () => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/user/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id, profile_completed: false, adminOverride: true }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      // Also update locally
+      await insforge.database.from("profiles").update({
+        profile_completed: false,
+        profile_completed_at: null,
+      }).eq("id", id);
+      setProfile(p => p ? { ...p, profile_completed: false } : p);
+      toast.success("Profile unlocked. User can now edit their profile.");
+    } catch { toast.error("Failed to unlock profile."); }
+    setActionLoading(false);
+  };
+
+  const handleLockProfile = async () => {
+    setActionLoading(true);
+    try {
+      await insforge.database.from("profiles").update({
+        profile_completed: true,
+        profile_completed_at: new Date().toISOString(),
+      }).eq("id", id);
+      setProfile(p => p ? { ...p, profile_completed: true } : p);
+      toast.success("Profile locked.");
+    } catch { toast.error("Failed."); }
     setActionLoading(false);
   };
 
@@ -219,6 +252,19 @@ export default function AdminUserDetailPage() {
           <Briefcase className="w-5 h-5 text-[#1a3c8f]" /> Admin Actions
         </h2>
         <div className="flex flex-wrap gap-3">
+          {/* Lock / Unlock profile */}
+          {profile.profile_completed ? (
+            <button onClick={handleUnlockProfile} disabled={actionLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-yellow-200 text-yellow-700 hover:bg-yellow-50 transition-colors disabled:opacity-60">
+              <Lock className="w-4 h-4" /> Unlock Profile for Editing
+            </button>
+          ) : (
+            <button onClick={handleLockProfile} disabled={actionLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-green-200 text-green-700 hover:bg-green-50 transition-colors disabled:opacity-60">
+              <CheckCircle className="w-4 h-4" /> Mark Profile Complete
+            </button>
+          )}
+
           {/* Suspend / Reactivate */}
           <button onClick={handleSuspend} disabled={actionLoading}
             className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-60",
