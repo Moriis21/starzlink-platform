@@ -22,6 +22,8 @@ import {
   Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import { ToolNavBar, NextSteps } from "@/components/ui/ToolNav";
 
 function ScoreRing({ score, color, size = 80 }: { score: number; color: string; size?: number }) {
   const radius = (size - 12) / 2;
@@ -182,6 +184,8 @@ export default function CareerDashboard() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb crumbs={[{ label: "Career Tools", href: "/dashboard/tools" }, { label: "AI Career Assistant" }]} />
+      <ToolNavBar backHref="/dashboard" backLabel="My Dashboard" />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -361,6 +365,8 @@ export default function CareerDashboard() {
           </div>
         </motion.div>
       )}
+
+      <NextSteps />
     </div>
   );
 }

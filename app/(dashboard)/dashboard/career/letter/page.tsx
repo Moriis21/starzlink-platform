@@ -23,6 +23,8 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import { ToolNavBar, NextSteps } from "@/components/ui/ToolNav";
 
 const MODES = [
   { value: "professional", label: "Professional", desc: "Direct & polished", icon: Briefcase },
@@ -171,6 +173,8 @@ export default function LetterPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      <Breadcrumb crumbs={[{ label: "Career Tools", href: "/dashboard/tools" }, { label: "AI Career Assistant", href: "/dashboard/career" }, { label: "Cover Letter Generator" }]} />
+      <ToolNavBar />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
@@ -337,6 +341,7 @@ export default function LetterPage() {
           )}
         </div>
       </div>
+      <NextSteps />
     </div>
   );
 }

@@ -14,6 +14,8 @@ import {
   Upload,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import { ToolNavBar, NextSteps } from "@/components/ui/ToolNav";
 
 export default function HistoryPage() {
   const { user } = useAuth();
@@ -72,6 +74,8 @@ export default function HistoryPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <Breadcrumb crumbs={[{ label: "Career Tools", href: "/dashboard/tools" }, { label: "AI Career Assistant", href: "/dashboard/career" }, { label: "Analysis History" }]} />
+      <ToolNavBar />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
@@ -177,6 +181,7 @@ export default function HistoryPage() {
           ))}
         </div>
       )}
+      <NextSteps />
     </div>
   );
 }

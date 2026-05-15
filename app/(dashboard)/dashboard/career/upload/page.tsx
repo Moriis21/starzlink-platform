@@ -8,6 +8,8 @@ import { insforge } from "@/lib/insforge";
 import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import CreditBadge from "@/components/career/CreditBadge";
+import Breadcrumb from "@/components/ui/Breadcrumb";
+import { ToolNavBar, NextSteps } from "@/components/ui/ToolNav";
 
 type Step = "idle" | "reading" | "extracting" | "uploading" | "analyzing" | "done" | "error";
 
@@ -199,6 +201,8 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <Breadcrumb crumbs={[{ label: "Career Tools", href: "/dashboard/tools" }, { label: "AI Career Assistant", href: "/dashboard/career" }, { label: "CV Analyzer" }]} />
+      <ToolNavBar />
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -399,6 +403,7 @@ export default function UploadPage() {
           </div>
         </div>
       </div>
+      <NextSteps />
     </div>
   );
 }
