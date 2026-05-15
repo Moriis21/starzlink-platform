@@ -1,3 +1,13 @@
+/**
+ * /api/stats — public platform stats
+ *
+ * NOTE: InsForge SDK does not work in server-side Node.js API routes (returns 0).
+ * This endpoint is kept for external consumers / homepage.
+ * The admin dashboard uses adminApi.getStats() directly (client-side SDK).
+ *
+ * For tables without RLS (public read), the SDK works client-side.
+ * For user counts with RLS, the admin dashboard uses its own client-side query.
+ */
 import { NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 export const runtime = "nodejs";
@@ -5,38 +15,19 @@ export const runtime = "nodejs";
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
 
-/** Count rows using InsForge SDK — works for public tables */
-async function sdkCount(table: string, filters?: (q: any) => any): Promise<number> {
-  try {
-    let q = insforge.database.from(table).select("id", { count: "exact" }).limit(1);
-    if (filters) q = filters(q);
-    const { count } = await q;
-    return count ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
-/** Count all auth users via InsForge admin API — bypasses RLS entirely */
 async function countAuthUsers(): Promise<number> {
   try {
     const authKey = process.env.INSFORGE_SERVICE_KEY || ANON_KEY;
-    const res = await fetch(`${INSFORGE_URL}/auth/v1/admin/users?per_page=1`, {
+    // Fetch up to 1000 users — count the array length
+    const res = await fetch(`${INSFORGE_URL}/auth/v1/admin/users?per_page=1000`, {
       headers: { apikey: authKey, Authorization: `Bearer ${authKey}` },
     });
     if (!res.ok) return 0;
     const json = await res.json();
-    // InsForge returns { total: N, users: [...] } or { count: N }
-    if (json.total !== undefined) return json.total;
-    if (json.count !== undefined) return json.count;
-    // Fallback: parse from another page fetch
-    const res2 = await fetch(`${INSFORGE_URL}/auth/v1/admin/users?per_page=1000`, {
-      headers: { apikey: authKey, Authorization: `Bearer ${authKey}` },
-    });
-    if (!res2.ok) return 0;
-    const j2 = await res2.json();
-    const users = Array.isArray(j2) ? j2 : (j2.users ?? []);
-    return users.length;
+    // Use total field if > 0, else count the array
+    const arr = Array.isArray(json) ? json : (json.users ?? []);
+    const declared = json.total || json.count || 0;
+    return declared > 0 ? declared : arr.length;
   } catch {
     return 0;
   }
@@ -48,54 +39,36 @@ export async function GET() {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // Run all counts in parallel
     const [
       total_users,
-      total_jobs,
-      total_scholarships,
-      total_trainings,
-      total_opportunities,
-      total_campus_updates,
-      total_partners,
-      total_events,
-      total_referrals,
-      total_newsletter_subscribers,
-      total_completed_profiles,
-      total_users_today,
-      total_users_this_month,
+      jobsRes, scholRes, trainRes, oppRes, campusRes,
+      partnersRes, eventsRes, referralsRes, newsletterRes,
     ] = await Promise.all([
-      // Use auth admin API for accurate user count (bypasses profiles RLS)
       countAuthUsers(),
-      // SDK counts for public tables — these work with anon key
-      sdkCount("jobs"),
-      sdkCount("scholarships"),
-      sdkCount("trainings"),
-      sdkCount("opportunities"),
-      sdkCount("campus_updates"),
-      sdkCount("partners", q => q.eq("is_active", true)),
-      sdkCount("events"),
-      sdkCount("referrals"),
-      sdkCount("newsletter_subscribers"),
-      sdkCount("profiles", q => q.eq("profile_completed", true)),
-      sdkCount("profiles", q => q.gte("created_at", todayStart)),
-      sdkCount("profiles", q => q.gte("created_at", monthStart)),
+      insforge.database.from("jobs").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("scholarships").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("trainings").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("opportunities").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("campus_updates").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("partners").select("id", { count: "exact" }).eq("is_active", true).limit(1),
+      insforge.database.from("events").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("referrals").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("newsletter_subscribers").select("id", { count: "exact" }).limit(1),
     ]);
+
+    const c = (r: any) => r?.count ?? 0;
 
     return NextResponse.json({
       total_users,
-      total_jobs,
-      total_scholarships,
-      total_trainings,
-      total_opportunities,
-      total_campus_updates,
-      total_partners,
-      total_events,
-      total_referrals,
-      total_newsletter_subscribers,
-      total_completed_profiles,
-      total_incomplete_profiles: Math.max(0, total_users - total_completed_profiles),
-      total_users_today,
-      total_users_this_month,
+      total_jobs:                  c(jobsRes),
+      total_scholarships:          c(scholRes),
+      total_trainings:             c(trainRes),
+      total_opportunities:         c(oppRes),
+      total_campus_updates:        c(campusRes),
+      total_partners:              c(partnersRes),
+      total_events:                c(eventsRes),
+      total_referrals:             c(referralsRes),
+      total_newsletter_subscribers: c(newsletterRes),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
