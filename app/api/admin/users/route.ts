@@ -34,7 +34,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
 
         if (ids.length > 0) {
           const pRes = await fetch(
-            `${INSFORGE_URL}/rest/v1/profiles?select=id,full_name,email,role,user_type,phone,is_suspended,avatar_url,created_at&id=in.(${ids.join(",")})`,
+            `${INSFORGE_URL}/rest/v1/profiles?select=id,full_name,email,role,user_type,phone,is_suspended,avatar_url,created_at,profile_completed&id=in.(${ids.join(",")})`,
             { headers: { apikey: authKey, Authorization: `Bearer ${authKey}` } }
           );
           if (pRes.ok) {
@@ -58,6 +58,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
             is_suspended: profile.is_suspended ?? false,
             avatar_url: profile.avatar_url ?? u.user_metadata?.avatar_url ?? "",
             created_at: u.created_at ?? profile.created_at,
+            profile_completed: profile.profile_completed ?? false,
           };
         });
 
@@ -82,7 +83,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
   // Strategy 2: Direct REST API on profiles table with service key
   try {
     const params = new URLSearchParams({
-      select: "id,full_name,email,phone,role,user_type,is_suspended,avatar_url,created_at",
+      select: "id,full_name,email,phone,role,user_type,is_suspended,avatar_url,created_at,profile_completed",
       order: "created_at.desc",
       limit: String(limit),
       offset: String((page - 1) * limit),
@@ -111,7 +112,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
   try {
     let q = insforge.database
       .from("profiles")
-      .select("id,full_name,email,phone,role,user_type,is_suspended,avatar_url,created_at", { count: "exact" })
+      .select("id,full_name,email,phone,role,user_type,is_suspended,avatar_url,created_at,profile_completed", { count: "exact" })
       .order("created_at", { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
 
@@ -132,6 +133,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search") || "";
     const roleFilter = searchParams.get("role") || "";
     const statusFilter = searchParams.get("status") || "";
+    const profileFilter = searchParams.get("profile") || "";
 
     let { users, total } = await fetchAllUsers(search, page, limit);
 
@@ -139,6 +141,8 @@ export async function GET(req: NextRequest) {
     if (roleFilter) users = users.filter((u: any) => u.role === roleFilter);
     if (statusFilter === "suspended") users = users.filter((u: any) => u.is_suspended === true);
     if (statusFilter === "active") users = users.filter((u: any) => !u.is_suspended);
+    if (profileFilter === "complete") users = users.filter((u: any) => u.profile_completed === true);
+    if (profileFilter === "incomplete") users = users.filter((u: any) => !u.profile_completed);
 
     return NextResponse.json({ users, total });
   } catch (err: any) {

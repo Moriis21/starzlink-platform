@@ -36,6 +36,7 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [profileFilter, setProfileFilter] = useState("all");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<AppUser | null>(null);
@@ -53,6 +54,7 @@ export default function AdminUsersPage() {
       if (search) params.set("search", search);
       if (roleFilter !== "all") params.set("role", roleFilter);
       if (statusFilter !== "all") params.set("status", statusFilter);
+      if (profileFilter !== "all") params.set("profile", profileFilter);
 
       const res = await fetch(`/api/admin/users?${params}`);
       const data = await res.json();
@@ -62,7 +64,7 @@ export default function AdminUsersPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, [page, search, roleFilter, statusFilter]);
+  useEffect(() => { fetchUsers(); }, [page, search, roleFilter, statusFilter, profileFilter]);
 
   const handleSuspend = async (u: AppUser) => {
     setActionLoading(u.id);
@@ -137,6 +139,11 @@ export default function AdminUsersPage() {
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
         </select>
+        <select value={profileFilter} onChange={e => { setProfileFilter(e.target.value); setPage(1); }} className="text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none bg-white">
+          <option value="all">All Profiles</option>
+          <option value="complete">Complete</option>
+          <option value="incomplete">Incomplete</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -159,6 +166,7 @@ export default function AdminUsersPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Role</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Joined</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Profile</th>
                 <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -190,6 +198,13 @@ export default function AdminUsersPage() {
                       <span className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-1 rounded-full">Suspended</span>
                     ) : (
                       <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">Active</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    {(u as any).profile_completed ? (
+                      <span className="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">Complete</span>
+                    ) : (
+                      <span className="text-xs font-semibold bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Incomplete</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right relative">

@@ -49,6 +49,7 @@ export default function HomePage() {
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
   const [platformStats, setPlatformStats] = useState<PlatformStats>({ opportunities: 0, members: 0, partners: 0, countries: 0 });
+  const [statsLoaded, setStatsLoaded] = useState(false);
   const [homeReviews, setHomeReviews] = useState<HomeReview[]>([]);
   const [totalStories, setTotalStories] = useState(0);
   const [avgRating, setAvgRating] = useState(0);
@@ -88,6 +89,7 @@ export default function HomePage() {
             partners: partnersC.count ?? 0,
             countries: 50, // Real reach — we serve 50+ countries
           });
+          setStatsLoaded(true);
         }
       } catch {}
     };
@@ -202,7 +204,7 @@ export default function HomePage() {
                   {[
                     { icon: CheckCircle, text: "100% Verified Listings" },
                     { icon: Globe, text: "50+ Countries" },
-                    { icon: Users, text: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+ Members` : "Growing Community" },
+                    { icon: Users, text: statsLoaded ? `${platformStats.members.toLocaleString()} Registered Members` : "Loading…" },
                   ].map(({ icon: Icon, text }) => (
                     <div key={text} className="flex items-center gap-1.5">
                       <Icon className="w-4 h-4 text-green-400" />
@@ -215,9 +217,9 @@ export default function HomePage() {
               {/* Stats grid — real data from DB */}
               <StaggerGroup className="hidden lg:grid grid-cols-2 gap-4">
                 {[
-                  { value: platformStats.opportunities > 0 ? `${platformStats.opportunities}+` : "100+", label: "Opportunities", icon: Briefcase },
-                  { value: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+` : "Growing", label: "Registered Members", icon: Users },
-                  { value: platformStats.partners > 0 ? `${platformStats.partners}+` : "12+", label: "Partner Institutions", icon: Building2 },
+                  { value: statsLoaded ? platformStats.opportunities.toLocaleString() : "—", label: "Opportunities", icon: Briefcase },
+                  { value: statsLoaded ? platformStats.members.toLocaleString() : "—", label: "Registered Members", icon: Users },
+                  { value: statsLoaded ? platformStats.partners.toLocaleString() : "—", label: "Partner Institutions", icon: Building2 },
                   { value: "50+", label: "Countries Reached", icon: Globe },
                 ].map(({ value, label, icon: Icon }) => (
                   <StaggerItem key={label}>
@@ -237,9 +239,9 @@ export default function HomePage() {
             {/* Mobile stats — real data */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10 lg:hidden">
               {[
-                { value: platformStats.opportunities > 0 ? `${platformStats.opportunities}+` : "100+", label: "Opportunities", icon: Briefcase },
-                { value: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+` : "Growing", label: "Members", icon: Users },
-                { value: platformStats.partners > 0 ? `${platformStats.partners}+` : "12+", label: "Partners", icon: Building2 },
+                { value: statsLoaded ? platformStats.opportunities.toLocaleString() : "—", label: "Opportunities", icon: Briefcase },
+                { value: statsLoaded ? platformStats.members.toLocaleString() : "—", label: "Members", icon: Users },
+                { value: statsLoaded ? platformStats.partners.toLocaleString() : "—", label: "Partners", icon: Building2 },
                 { value: "50+", label: "Countries", icon: Globe },
               ].map(({ value, label, icon: Icon }) => (
                 <div key={label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center">
