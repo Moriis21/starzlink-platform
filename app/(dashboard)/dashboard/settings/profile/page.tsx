@@ -69,8 +69,9 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (!user?.id) return;
-    insforge.database.from("profiles").select("*").eq("id", user.id).maybeSingle()
-      .then(({ data }) => {
+    const load = async () => {
+      try {
+        const { data } = await insforge.database.from("profiles").select("*").eq("id", user.id).maybeSingle();
         if (data) {
           const p = data as any;
           setForm({
@@ -96,9 +97,10 @@ export default function ProfileSettingsPage() {
         } else {
           setForm(f => ({ ...f, full_name: user.full_name || "", email: user.email || "" }));
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch {}
+      setLoading(false);
+    };
+    load();
   }, [user?.id]);
 
   const handleChange = (field: keyof ProfileForm) => (
