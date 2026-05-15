@@ -14,8 +14,9 @@ export default function UserDashboardPage() {
   const [recentJobs, setRecentJobs] = useState<any[]>([]);
   const [recentScholarships, setRecentScholarships] = useState<any[]>([]);
   const [recentTrainings, setRecentTrainings] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"saved" | "recommended" | "jobs" | "scholarships">("recommended");
+  const [activeTab, setActiveTab] = useState<"saved" | "recommended" | "foryou" | "jobs" | "scholarships">("foryou");
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -33,8 +34,18 @@ export default function UserDashboardPage() {
       } catch {}
       setLoading(false);
     };
+    const fetchRecs = async () => {
+      if (user?.id) {
+        try {
+          const recRes = await fetch(`/api/recommendations?userId=${user.id}&limit=4`);
+          const recData = await recRes.json();
+          setRecommendations(recData.recommendations || []);
+        } catch {}
+      }
+    };
     fetchAll();
-  }, []);
+    fetchRecs();
+  }, [user?.id]);
 
   const handleRemoveSaved = async (id: string) => {
     try {
@@ -128,6 +139,7 @@ export default function UserDashboardPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex border-b border-gray-100">
               {[
+                { key: "foryou", label: "For You" },
                 { key: "recommended", label: "Recommended" },
                 { key: "saved", label: `Saved (${saved.length})` },
                 { key: "jobs", label: "Latest Jobs" },
@@ -148,6 +160,31 @@ export default function UserDashboardPage() {
                 <div className="space-y-3">{Array(4).fill(0).map((_, i) => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />)}</div>
               ) : (
                 <>
+                  {/* For You */}
+                  {activeTab === "foryou" && (
+                    <div className="space-y-3">
+                      {recommendations.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 text-sm">
+                          Complete your profile to get personalized recommendations.
+                        </div>
+                      ) : recommendations.map((item, i) => {
+                        const daysLeft = item.deadline ? Math.ceil((new Date(item.deadline).getTime() - Date.now()) / 86400000) : null;
+                        return (
+                          <Link key={i} href={item._href} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-blue-50 transition-colors group">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${item._color}`}>{item._label}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-900 text-sm truncate group-hover:text-[#1a3c8f]">{item.title}</p>
+                              <p className="text-xs text-gray-500">{item.company || item.provider || item.organizer}</p>
+                            </div>
+                            {daysLeft !== null && daysLeft > 0 && (
+                              <span className={`text-xs font-medium flex-shrink-0 ${daysLeft <= 7 ? "text-red-600" : "text-gray-400"}`}>{daysLeft}d left</span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Recommended */}
                   {activeTab === "recommended" && (
                     <div className="space-y-3">

@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Calendar, Building2, Clock, Mail, ExternalLink, Bookmark, Share2, ChevronLeft, CheckCircle, Banknote, AlertCircle } from "lucide-react";
+import { MapPin, Calendar, Building2, Clock, Mail, ExternalLink, Bookmark, ChevronLeft, CheckCircle, Banknote, AlertCircle } from "lucide-react";
 import { jobsApi } from "@/lib/api";
 import { Job } from "@/types";
 import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
 import AuthGate from "@/components/ui/AuthGate";
+import ShareButtons from "@/components/ui/ShareButtons";
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -181,6 +182,10 @@ export default function JobDetailPage() {
                 </div>
               )}
 
+              <div className="mb-3">
+                <ShareButtons title={job.title} description={job.description} />
+              </div>
+
               <a
                 href={job.application_link}
                 target="_blank"
@@ -196,12 +201,6 @@ export default function JobDetailPage() {
                   className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 border rounded-xl text-sm font-medium transition-colors", saved ? "bg-blue-50 border-[#1a3c8f] text-[#1a3c8f]" : "border-gray-200 text-gray-600 hover:border-[#1a3c8f]")}
                 >
                   <Bookmark className="w-4 h-4" fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save"}
-                </button>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:border-[#1a3c8f] transition-colors"
-                >
-                  <Share2 className="w-4 h-4" /> Share
                 </button>
               </div>
 

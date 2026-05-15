@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Calendar, GraduationCap, ExternalLink, Bookmark, Share2, ChevronLeft, CheckCircle, FileText } from "lucide-react";
+import { MapPin, Calendar, GraduationCap, ExternalLink, Bookmark, ChevronLeft, CheckCircle, FileText } from "lucide-react";
 import { scholarshipsApi } from "@/lib/api";
 import { Scholarship } from "@/types";
 import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import AuthGate from "@/components/ui/AuthGate";
+import ShareButtons from "@/components/ui/ShareButtons";
 
 export default function ScholarshipDetailPage() {
   const { id } = useParams();
@@ -84,15 +85,15 @@ export default function ScholarshipDetailPage() {
               ) : (
                 <div className="text-center mb-4 p-3 bg-red-50 rounded-xl"><p className="text-red-700 font-bold">Applications Closed</p></div>
               )}
+              <div className="mb-3">
+                <ShareButtons title={item.title} description={item.description} />
+              </div>
               <a href={item.application_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a3c8f] text-white font-bold rounded-xl hover:bg-blue-900 mb-3">
                 Apply Now <ExternalLink className="w-4 h-4" />
               </a>
               <div className="flex gap-2">
                 <button onClick={() => { setSaved(!saved); toast.success(saved ? "Removed" : "Saved!"); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 border rounded-xl text-sm font-medium", saved ? "bg-blue-50 border-[#1a3c8f] text-[#1a3c8f]" : "border-gray-200 text-gray-600")}>
                   <Bookmark className="w-4 h-4" fill={saved ? "currentColor" : "none"} />{saved ? "Saved" : "Save"}
-                </button>
-                <button onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600">
-                  <Share2 className="w-4 h-4" /> Share
                 </button>
               </div>
             </div>

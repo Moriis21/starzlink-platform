@@ -91,11 +91,34 @@ export default function NotificationBell({ isAdmin = false }: { isAdmin?: boolea
             read: false,
             created_at: c.created_at,
           })),
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        ];
 
-        // Restore read state from localStorage
+        // Fetch system notifications (payment approved, etc.)
+        let systemNotifs: NotifItem[] = [];
+        try {
+          const { data: dbNotifs } = await insforge.database
+            .from("notifications")
+            .select("id, type, title, body, href, read, created_at")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(5);
+          systemNotifs = (dbNotifs || []).map((n: any) => ({
+            id: `sys-${n.id}`,
+            type: (n.type || "system") as NotifItem["type"],
+            title: n.title,
+            body: n.body || "",
+            href: n.href || "/dashboard",
+            read: n.read,
+            created_at: n.created_at,
+          }));
+        } catch {}
+
+        // Merge system + content notifications, sort by date
+        const allItems = [...systemNotifs, ...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        // Restore read state from localStorage for content notifications
         const readIds: string[] = JSON.parse(localStorage.getItem("starzlink_read_notifs") || "[]");
-        setNotifications(items.map(n => ({ ...n, read: readIds.includes(n.id) })));
+        setNotifications(allItems.map(n => n.id.startsWith("sys-") ? n : { ...n, read: readIds.includes(n.id) }));
       } catch {}
       setLoading(false);
     };
@@ -103,15 +126,26 @@ export default function NotificationBell({ isAdmin = false }: { isAdmin?: boolea
   }, [user]);
 
   const markAllRead = () => {
-    const ids = notifications.map(n => n.id);
-    localStorage.setItem("starzlink_read_notifs", JSON.stringify(ids));
+    const contentIds = notifications.filter(n => !n.id.startsWith("sys-")).map(n => n.id);
+    localStorage.setItem("starzlink_read_notifs", JSON.stringify(contentIds));
+    // Mark system notifications read in DB
+    notifications.filter(n => n.id.startsWith("sys-") && !n.read).forEach(n => {
+      const realId = n.id.replace("sys-", "");
+      try { insforge.database.from("notifications").update({ read: true }).eq("id", realId); } catch {}
+    });
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const markRead = (id: string) => {
-    const existing: string[] = JSON.parse(localStorage.getItem("starzlink_read_notifs") || "[]");
-    if (!existing.includes(id)) {
-      localStorage.setItem("starzlink_read_notifs", JSON.stringify([...existing, id]));
+    // If it's a system notification, mark as read in DB
+    if (id.startsWith("sys-")) {
+      const realId = id.replace("sys-", "");
+      try { insforge.database.from("notifications").update({ read: true }).eq("id", realId); } catch {}
+    } else {
+      const existing: string[] = JSON.parse(localStorage.getItem("starzlink_read_notifs") || "[]");
+      if (!existing.includes(id)) {
+        localStorage.setItem("starzlink_read_notifs", JSON.stringify([...existing, id]));
+      }
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import AuthGate from "@/components/ui/AuthGate";
 import Link from "next/link";
 import { MapPin, Calendar, Clock, DollarSign, ExternalLink, ChevronLeft, Briefcase, Globe } from "lucide-react";
+import ShareButtons from "@/components/ui/ShareButtons";
 
 export default function InternshipDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -127,6 +128,9 @@ export default function InternshipDetailPage() {
                 {item.category && <><dt className="text-gray-500">Category</dt><dd className="font-medium text-gray-900">{item.category}</dd></>}
                 {item.deadline && <><dt className="text-gray-500">Deadline</dt><dd className="font-medium text-red-600">{new Date(item.deadline).toLocaleDateString()}</dd></>}
               </dl>
+            </div>
+            <div className="mb-3">
+              <ShareButtons title={item.title} description={item.description} />
             </div>
             {item.application_link && (
               <a
