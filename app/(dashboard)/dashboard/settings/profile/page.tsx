@@ -170,19 +170,6 @@ export default function ProfileSettingsPage() {
           </span>
         </div>
 
-        {/* Locked notice */}
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5 flex items-start gap-3">
-          <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <Lock className="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <p className="font-bold text-amber-800 mb-0.5">Profile Locked</p>
-            <p className="text-sm text-amber-700">
-              Your profile is complete and has been locked. To make changes, please contact an Admin or Super Admin who can unlock your profile.
-            </p>
-          </div>
-        </div>
-
         {/* Read-only view of saved data */}
         <div className="space-y-4">
           {[
