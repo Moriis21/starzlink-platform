@@ -30,7 +30,7 @@ const STATUS_BADGES: Record<string, string> = {
 interface ExpiredRecord { id: string; title: string; status: string; deadline?: string; created_at: string; expired_at?: string; archived_at?: string; _table: string; _type: string; }
 
 export default function ExpiredContentPage() {
-  const [records, setRecords] = useState<Record[]>([]);
+  const [records, setRecords] = useState<ExpiredRecord[]>([]);
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [cleaning, setCleaning] = useState(false);
@@ -38,7 +38,7 @@ export default function ExpiredContentPage() {
   const [statusTab, setStatusTab] = useState<StatusTab>("expired");
   const [typeFilter, setTypeFilter] = useState<ContentType>("all");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Record | null>(null);
+  const [selected, setSelected] = useState<ExpiredRecord | null>(null);
   const [modal, setModal] = useState<"restore" | "extend" | "archive" | "delete" | null>(null);
   const [newDeadline, setNewDeadline] = useState("");
   const [extendReason, setExtendReason] = useState("");
