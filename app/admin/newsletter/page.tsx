@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { newsletterApi } from "@/lib/api";
+import { insforge } from "@/lib/insforge";
 import { NewsletterSubscriber } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Mail, Users, Send, Search, Download } from "lucide-react";
@@ -12,6 +13,7 @@ export default function AdminNewsletterPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [total, setTotal] = useState(0);
+  const [sentCount, setSentCount] = useState(0);
   const [composing, setComposing] = useState(false);
   const [newsletter, setNewsletter] = useState({ subject: "", body: "" });
   const [sending, setSending] = useState(false);
@@ -19,9 +21,13 @@ export default function AdminNewsletterPage() {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await newsletterApi.getSubscribers({ search });
-        setSubscribers(res.data?.data || res.data || []);
-        setTotal(res.data?.total || 0);
+        const [subRes, campaignRes] = await Promise.all([
+          newsletterApi.getSubscribers({ search }),
+          insforge.database.from("email_campaigns").select("id", { count: "exact" }).eq("status", "sent").limit(1),
+        ]);
+        setSubscribers(subRes.data?.data || subRes.data || []);
+        setTotal(subRes.data?.total || 0);
+        setSentCount(campaignRes.count ?? 0);
       } catch {}
       setLoading(false);
     };
@@ -59,13 +65,13 @@ export default function AdminNewsletterPage() {
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
           <Mail className="w-8 h-8 text-green-600 mx-auto mb-2" />
-          <p className="text-3xl font-extrabold text-gray-900">12</p>
+          <p className="text-3xl font-extrabold text-gray-900">{sentCount}</p>
           <p className="text-sm text-gray-500">Newsletters Sent</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm text-center">
           <Send className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-          <p className="text-3xl font-extrabold text-gray-900">68%</p>
-          <p className="text-sm text-gray-500">Avg Open Rate</p>
+          <p className="text-3xl font-extrabold text-gray-900">{sentCount > 0 ? sentCount : "—"}</p>
+          <p className="text-sm text-gray-500">Campaigns Delivered</p>
         </div>
       </div>
 
