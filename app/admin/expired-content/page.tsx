@@ -27,7 +27,7 @@ const STATUS_BADGES: Record<string, string> = {
   deleted: "bg-red-200 text-red-800",
 };
 
-interface Record { id: string; title: string; status: string; deadline?: string; created_at: string; expired_at?: string; archived_at?: string; _table: string; _type: string; }
+interface ExpiredRecord { id: string; title: string; status: string; deadline?: string; created_at: string; expired_at?: string; archived_at?: string; _table: string; _type: string; }
 
 export default function ExpiredContentPage() {
   const [records, setRecords] = useState<Record[]>([]);
