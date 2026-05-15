@@ -32,8 +32,8 @@ const TOOLS = [
     color: "from-purple-500 to-purple-700",
     bg: "bg-purple-50",
     text: "text-purple-700",
-    badge: "Free",
-    pro: false,
+    badge: "Pro",
+    pro: true,
     status: "active",
   },
   {
@@ -84,8 +84,8 @@ const TOOLS = [
     color: "from-indigo-500 to-indigo-700",
     bg: "bg-indigo-50",
     text: "text-indigo-700",
-    badge: "Free",
-    pro: false,
+    badge: "Pro",
+    pro: true,
     status: "active",
   },
   {
