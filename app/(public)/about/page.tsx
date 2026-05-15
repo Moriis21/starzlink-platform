@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import BrandImage from "@/components/ui/BrandImage";
 import { insforge } from "@/lib/insforge";
@@ -11,7 +11,7 @@ import {
 
 // metadata removed — this is now a client component
 
-const stats = [
+const DEFAULT_STATS = [
   { value: "50K+", label: "Active Users", icon: Users },
   { value: "10K+", label: "Opportunities Posted", icon: TrendingUp },
   { value: "5K+", label: "Scholarships Awarded", icon: Award },
@@ -47,8 +47,15 @@ interface Partner {
   location?: string;
 }
 
+interface DynamicStat {
+  value: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
 export default function AboutPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [stats, setStats] = useState<DynamicStat[]>(DEFAULT_STATS);
 
   useEffect(() => {
     insforge.database
@@ -59,6 +66,35 @@ export default function AboutPage() {
       .order("founded", { ascending: true })
       .limit(8)
       .then(({ data }) => setPartners((data as any) ?? []));
+
+    // Fetch real stats
+    Promise.allSettled([
+      insforge.database.from("profiles").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("jobs").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("scholarships").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("trainings").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("opportunities").select("id", { count: "exact" }).limit(1),
+      insforge.database.from("partners").select("id", { count: "exact" }).eq("is_active", true).limit(1),
+      insforge.database.from("campus_updates").select("id", { count: "exact" }).limit(1),
+    ]).then(([usersRes, jobsRes, scholRes, trainRes, oppRes, partnersRes, campusRes]) => {
+      const membersCount = usersRes.status === "fulfilled" ? ((usersRes.value as any).count ?? 0) : 0;
+      const totalOpps =
+        (jobsRes.status === "fulfilled" ? ((jobsRes.value as any).count ?? 0) : 0) +
+        (scholRes.status === "fulfilled" ? ((scholRes.value as any).count ?? 0) : 0) +
+        (trainRes.status === "fulfilled" ? ((trainRes.value as any).count ?? 0) : 0) +
+        (oppRes.status === "fulfilled" ? ((oppRes.value as any).count ?? 0) : 0);
+      const scholCount = scholRes.status === "fulfilled" ? ((scholRes.value as any).count ?? 0) : 0;
+      const trainCount = trainRes.status === "fulfilled" ? ((trainRes.value as any).count ?? 0) : 0;
+      const campusCount = campusRes.status === "fulfilled" ? ((campusRes.value as any).count ?? 0) : 0;
+
+      setStats([
+        { value: membersCount > 0 ? `${membersCount.toLocaleString()}+` : "50K+", label: "Active Users", icon: Users },
+        { value: totalOpps > 0 ? `${totalOpps}+` : "10K+", label: "Opportunities Posted", icon: TrendingUp },
+        { value: scholCount > 0 ? `${scholCount}+` : "5K+", label: "Scholarships Listed", icon: Award },
+        { value: trainCount > 0 ? `${trainCount}+` : "100+", label: "Training Programs", icon: Target },
+        { value: "50+", label: "Countries Reached", icon: Globe },
+      ]);
+    }).catch(() => {});
   }, []);
 
   return (

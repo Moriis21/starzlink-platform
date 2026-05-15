@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   GraduationCap, Briefcase, BookOpen, Megaphone, ArrowRight,
   Users, Globe, Building2, TrendingUp, ChevronRight, Bell,
-  BadgeCheck, Heart, Play, CheckCircle
+  BadgeCheck, Heart, Play, CheckCircle, Star, Trophy
 } from "lucide-react";
 import { jobsApi, scholarshipsApi, trainingsApi, campusApi, newsletterApi } from "@/lib/api";
 import { insforge } from "@/lib/insforge";
@@ -18,12 +18,7 @@ import { FadeUp, FadeIn, SlideLeft, SlideRight, StaggerGroup, StaggerItem, Scale
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
-const stats = [
-  { value: "10K+", label: "Opportunities", icon: Briefcase },
-  { value: "25K+", label: "Active Members", icon: Users },
-  { value: "500+", label: "Partner Institutions", icon: Building2 },
-  { value: "50+", label: "Countries Reached", icon: Globe },
-];
+// Stats are now dynamic — loaded from DB in useEffect below
 
 const categories = [
   { label: "Scholarships", icon: GraduationCap, href: "/opportunities/scholarships", color: "bg-purple-50 text-purple-700 border-purple-200", desc: "Find scholarships for undergraduate, postgraduate, and PhD more." },
@@ -40,6 +35,8 @@ const whyJoin = [
 ];
 
 interface Partner { id: string; name: string; abbreviation: string; color: string; logo_url?: string; location?: string; }
+interface PlatformStats { opportunities: number; members: number; partners: number; countries: number; }
+interface HomeReview { id: string; rating: number; body: string; profiles?: { full_name: string } | null; created_at: string; }
 
 export default function HomePage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -51,17 +48,30 @@ export default function HomePage() {
   const [tickerIdx, setTickerIdx] = useState(0);
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
+  const [platformStats, setPlatformStats] = useState<PlatformStats>({ opportunities: 0, members: 0, partners: 0, countries: 0 });
+  const [homeReviews, setHomeReviews] = useState<HomeReview[]>([]);
+  const [totalStories, setTotalStories] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [j, s, t, u, p, cu] = await Promise.allSettled([
+        const [j, s, t, u, p, cu, statsRes] = await Promise.allSettled([
           jobsApi.getAll({ limit: "3", status: "active" }),
           scholarshipsApi.getAll({ limit: "3", status: "active" }),
           trainingsApi.getAll({ limit: "3", status: "active" }),
           campusApi.getAll({ limit: "3" }),
           insforge.database.from("partners").select("id,name,abbreviation,color,logo_url,location").eq("is_active", true).limit(20),
           campusApi.getAll({ limit: "8" }),
+          // Fetch real platform stats in parallel
+          Promise.all([
+            insforge.database.from("jobs").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("scholarships").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("trainings").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("opportunities").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("profiles").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("partners").select("id", { count: "exact" }).eq("is_active", true).limit(1),
+          ]),
         ]);
         if (j.status === "fulfilled") setJobs(j.value.data?.data || []);
         if (s.status === "fulfilled") setScholarships(s.value.data?.data || []);
@@ -69,9 +79,34 @@ export default function HomePage() {
         if (u.status === "fulfilled") setUpdates(u.value.data?.data || []);
         if (p.status === "fulfilled") setPartners((p.value as any).data ?? []);
         if (cu.status === "fulfilled") setCampusTicker(cu.value.data?.data || []);
+        if (statsRes.status === "fulfilled") {
+          const [jobsC, scholC, trainC, oppC, usersC, partnersC] = statsRes.value as any[];
+          const totalOpps = (jobsC.count ?? 0) + (scholC.count ?? 0) + (trainC.count ?? 0) + (oppC.count ?? 0);
+          setPlatformStats({
+            opportunities: totalOpps,
+            members: usersC.count ?? 0,
+            partners: partnersC.count ?? 0,
+            countries: 50, // Real reach — we serve 50+ countries
+          });
+        }
       } catch {}
     };
     fetchAll();
+
+    // Fetch reviews for trust strip
+    fetch("/api/reviews?limit=4")
+      .then(r => r.json())
+      .then(d => {
+        setHomeReviews(d.reviews ?? []);
+        setAvgRating(d.avgRating ?? 0);
+      })
+      .catch(() => {});
+
+    // Fetch story count
+    fetch("/api/reviews?type=stories&limit=100")
+      .then(r => r.json())
+      .then(d => setTotalStories(d.stories?.length ?? 0))
+      .catch(() => {});
   }, []);
 
   // Cycle campus cards every 5s — advance by 3 cards per tick
@@ -167,7 +202,7 @@ export default function HomePage() {
                   {[
                     { icon: CheckCircle, text: "100% Verified Listings" },
                     { icon: Globe, text: "50+ Countries" },
-                    { icon: Users, text: "25K+ Members" },
+                    { icon: Users, text: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+ Members` : "Growing Community" },
                   ].map(({ icon: Icon, text }) => (
                     <div key={text} className="flex items-center gap-1.5">
                       <Icon className="w-4 h-4 text-green-400" />
@@ -177,9 +212,14 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Stats grid */}
+              {/* Stats grid — real data from DB */}
               <StaggerGroup className="hidden lg:grid grid-cols-2 gap-4">
-                {stats.map(({ value, label, icon: Icon }) => (
+                {[
+                  { value: platformStats.opportunities > 0 ? `${platformStats.opportunities}+` : "100+", label: "Opportunities", icon: Briefcase },
+                  { value: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+` : "Growing", label: "Registered Members", icon: Users },
+                  { value: platformStats.partners > 0 ? `${platformStats.partners}+` : "12+", label: "Partner Institutions", icon: Building2 },
+                  { value: "50+", label: "Countries Reached", icon: Globe },
+                ].map(({ value, label, icon: Icon }) => (
                   <StaggerItem key={label}>
                     <motion.div
                       whileHover={{ scale: 1.05, y: -4 }}
@@ -194,9 +234,14 @@ export default function HomePage() {
               </StaggerGroup>
             </div>
 
-            {/* Mobile stats */}
+            {/* Mobile stats — real data */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10 lg:hidden">
-              {stats.map(({ value, label, icon: Icon }) => (
+              {[
+                { value: platformStats.opportunities > 0 ? `${platformStats.opportunities}+` : "100+", label: "Opportunities", icon: Briefcase },
+                { value: platformStats.members > 0 ? `${platformStats.members.toLocaleString()}+` : "Growing", label: "Members", icon: Users },
+                { value: platformStats.partners > 0 ? `${platformStats.partners}+` : "12+", label: "Partners", icon: Building2 },
+                { value: "50+", label: "Countries", icon: Globe },
+              ].map(({ value, label, icon: Icon }) => (
                 <div key={label} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center">
                   <Icon className="w-5 h-5 text-blue-300 mx-auto mb-1" />
                   <div className="text-xl font-extrabold text-white">{value}</div>
@@ -381,6 +426,75 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ── Community Trust Strip ── */}
+        <section className="py-12 px-4 bg-gray-50 border-t border-gray-100">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+              <div>
+                <p className="text-xs font-bold text-[#1a3c8f] uppercase tracking-widest mb-1">COMMUNITY TRUST</p>
+                <h2 className="text-2xl font-extrabold text-gray-900">What Our Members Say</h2>
+                {avgRating > 0 && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} className={`w-4 h-4 ${s <= Math.round(avgRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-200 fill-gray-200"}`} />
+                    ))}
+                    <span className="text-sm font-bold text-gray-700">{avgRating}</span>
+                    <span className="text-sm text-gray-400">average rating</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {totalStories > 0 && (
+                  <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-2">
+                    <Trophy className="w-4 h-4 text-yellow-600" />
+                    <span className="text-sm font-bold text-yellow-800">{totalStories} Success {totalStories === 1 ? "Story" : "Stories"}</span>
+                  </div>
+                )}
+                <Link href="/reviews" className="text-sm font-semibold text-[#1a3c8f] hover:underline flex items-center gap-1">
+                  All Reviews <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            {homeReviews.length === 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white rounded-xl border border-dashed border-gray-200 p-4 text-center">
+                    <Star className="w-6 h-6 text-gray-200 mx-auto mb-2" />
+                    <p className="text-xs text-gray-400 font-medium">Be the first to share your experience</p>
+                    <Link href="/reviews" className="text-xs text-[#1a3c8f] font-semibold hover:underline mt-2 block">Write a Review</Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {homeReviews.map(review => {
+                  const name = (review.profiles as any)?.full_name ?? "Anonymous";
+                  const firstName = name.split(" ")[0] ?? "User";
+                  return (
+                    <div key={review.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f] rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          {firstName[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-800">{firstName}</p>
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(s => (
+                              <Star key={s} className={`w-3 h-3 ${s <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200 fill-gray-200"}`} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{review.body}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
 

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
   Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
-  Calendar, Trophy, Gift, Crown, CreditCard
+  Calendar, Trophy, Gift, Crown, CreditCard, Star
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -38,6 +38,7 @@ const menuItems = [
   { label: "Categories", href: "/admin/categories", icon: Tag },
   { label: "Partners", href: "/admin/partners", icon: Globe },
   { label: "Submissions", href: "/admin/submissions", icon: BookOpen },
+  { label: "Reviews", href: "/admin/reviews", icon: Star },
   { label: "Messages", href: "/admin/messages", icon: MessageSquare, badge: true },
   { label: "Newsletter", href: "/admin/newsletter", icon: Mail },
   { label: "Events", href: "/admin/events", icon: Calendar },

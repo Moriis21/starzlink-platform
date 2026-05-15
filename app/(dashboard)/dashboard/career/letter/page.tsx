@@ -15,8 +15,34 @@ import {
   Copy,
   CheckCircle,
   Star,
+  Briefcase,
+  MessageCircle,
+  TrendingUp,
+  Sparkles,
+  Code,
+  GraduationCap,
 } from "lucide-react";
 import { motion } from "framer-motion";
+
+const MODES = [
+  { value: "professional", label: "Professional", desc: "Direct & polished", icon: Briefcase },
+  { value: "casual_professional", label: "Casual Pro", desc: "Warm & personable", icon: MessageCircle },
+  { value: "confident", label: "Confident", desc: "Bold, no hedging", icon: TrendingUp },
+  { value: "creative", label: "Creative", desc: "Unique angle", icon: Sparkles },
+  { value: "technical", label: "Technical", desc: "Precise & evidence-based", icon: Code },
+  { value: "student", label: "Student", desc: "Honest potential", icon: GraduationCap },
+] as const;
+
+type ModeValue = typeof MODES[number]["value"];
+
+const MODE_LABELS: Record<ModeValue, string> = {
+  professional: "Professional",
+  casual_professional: "Casual Professional",
+  confident: "Confident",
+  creative: "Creative",
+  technical: "Technical",
+  student: "Student",
+};
 
 export default function LetterPage() {
   const { user } = useAuth();
@@ -25,10 +51,14 @@ export default function LetterPage() {
 
   const [jobTitle, setJobTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [country, setCountry] = useState("");
   const [cvText, setCvText] = useState("");
+  const [selectedMode, setSelectedMode] = useState<ModeValue>("professional");
   const [loading, setLoading] = useState(false);
   const [letter, setLetter] = useState("");
   const [editedLetter, setEditedLetter] = useState("");
+  const [usedMode, setUsedMode] = useState<ModeValue | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Pre-fill with latest CV text if available
@@ -61,6 +91,9 @@ export default function LetterPage() {
           companyName: companyName.trim(),
           cvText: cvText.trim(),
           userId: user.id,
+          writingMode: selectedMode,
+          industry: industry.trim() || undefined,
+          country: country.trim() || undefined,
         }),
       });
 
@@ -72,6 +105,7 @@ export default function LetterPage() {
       const { content } = await res.json();
       setLetter(content);
       setEditedLetter(content);
+      setUsedMode(selectedMode);
     } catch (err: any) {
       alert(err.message || "Something went wrong.");
     }
@@ -115,7 +149,7 @@ export default function LetterPage() {
         </p>
         <div className="bg-white border border-gray-100 rounded-2xl p-5 text-left mb-6 shadow-sm">
           <ul className="space-y-2">
-            {["Custom letters for any job and company", "Uses your CV background automatically", "Professional and persuasive tone", "Fully editable before sending", "Instant download"].map(f => (
+            {["Custom letters for any job and company", "Uses your CV background automatically", "6 writing style modes", "Fully editable before sending", "Instant download"].map(f => (
               <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
                 <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" /> {f}
               </li>
@@ -176,6 +210,29 @@ export default function LetterPage() {
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Industry</label>
+              <input
+                type="text"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="e.g. Healthcare, Technology"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3c8f] focus:border-transparent text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Country / Region</label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="e.g. Liberia, Nigeria, USA"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3c8f] focus:border-transparent text-sm"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               Your Background / CV Key Points
@@ -185,9 +242,38 @@ export default function LetterPage() {
               value={cvText}
               onChange={(e) => setCvText(e.target.value)}
               placeholder="Paste your CV text or key professional highlights..."
-              rows={8}
+              rows={5}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1a3c8f] focus:border-transparent resize-none text-sm"
             />
+          </div>
+
+          {/* Writing Style Selector */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2.5">Writing Style</label>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {MODES.map(({ value, label, desc, icon: Icon }) => {
+                const isSelected = selectedMode === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setSelectedMode(value)}
+                    className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border-2 transition-all min-w-[80px] relative ${
+                      isSelected
+                        ? "border-[#1a3c8f] bg-blue-50 text-[#1a3c8f]"
+                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {isSelected && (
+                      <CheckCircle className="absolute top-1 right-1 w-3 h-3 text-[#1a3c8f]" />
+                    )}
+                    <Icon className={`w-4 h-4 ${isSelected ? "text-[#1a3c8f]" : "text-gray-400"}`} />
+                    <span className="text-xs font-semibold leading-none">{label}</span>
+                    <span className="text-[9px] text-center leading-tight text-gray-400">{desc}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <button
@@ -206,7 +292,14 @@ export default function LetterPage() {
         {/* Preview */}
         <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-6 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900">Letter Preview</h3>
+            <div>
+              <h3 className="font-bold text-gray-900">Letter Preview</h3>
+              {usedMode && letter && (
+                <p className="text-xs text-[#1a3c8f] mt-0.5 font-medium">
+                  Generated in {MODE_LABELS[usedMode]} style
+                </p>
+              )}
+            </div>
             {letter && (
               <div className="flex items-center gap-2">
                 <button
