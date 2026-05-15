@@ -84,28 +84,38 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get version number
-    const { count: versionCount } = await insforge.database
-      .from("cv_uploads")
-      .select("id", { count: "exact" })
-      .eq("user_id", userId)
-      .limit(1);
-    const cvVersion = (versionCount ?? 0) + 1;
+    // Save upload record — try with cv_version, fall back without it
+    let uploadData: any = null;
+    let uploadError: any = null;
 
-    // Save upload record to InsForge
-    const { data: uploadData, error: uploadError } = await insforge.database
-      .from("cv_uploads")
-      .insert([{
-        user_id: userId,
-        file_name: fileName || "cv.pdf",
-        file_size: fileSize || 0,
-        file_url: fileUrl || "",
-        extracted_text: extractedText,
-        status: "processing",
-        cv_version: cvVersion,
-      }])
-      .select("id")
-      .single();
+    const baseUpload = {
+      user_id: userId,
+      file_name: fileName || "cv.pdf",
+      file_size: fileSize || 0,
+      file_url: fileUrl || "",
+      extracted_text: extractedText,
+      status: "processing",
+    };
+
+    // Try with cv_version first
+    try {
+      const { count: versionCount } = await insforge.database
+        .from("cv_uploads").select("id", { count: "exact" }).eq("user_id", userId).limit(1);
+      const res = await insforge.database
+        .from("cv_uploads")
+        .insert([{ ...baseUpload, cv_version: (versionCount ?? 0) + 1 }])
+        .select("id").single();
+      uploadData = res.data;
+      uploadError = res.error;
+    } catch {}
+
+    // Fallback: insert without cv_version
+    if (!uploadData || uploadError) {
+      const res = await insforge.database
+        .from("cv_uploads").insert([baseUpload]).select("id").single();
+      uploadData = res.data;
+      uploadError = res.error;
+    }
 
     if (uploadError || !uploadData) {
       console.error("Upload record error:", uploadError);
@@ -249,30 +259,46 @@ ${isReUpload ? `NOTE: This appears to be an updated/improved version of a previo
       };
     }
 
-    // Save analysis to InsForge
-    const { data: analysisData, error: analysisError } = await insforge.database
-      .from("cv_analysis")
-      .insert([{
-        upload_id: uploadId,
-        user_id: userId,
-        overall_score: analysis.overall_score ?? 0,
-        ats_score: analysis.ats_score ?? 0,
-        strengths: analysis.strengths ?? [],
-        weak_areas: analysis.weak_areas ?? [],
-        missing_keywords: analysis.missing_keywords ?? [],
-        formatting_issues: analysis.formatting_issues ?? [],
-        grammar_issues: analysis.grammar_issues ?? [],
-        section_review: analysis.section_review ?? {},
-        recommended_job_titles: analysis.recommended_job_titles ?? [],
-        career_advice: analysis.career_advice ?? "",
-        raw_response: rawResponse,
+    // Save analysis — try with new fields, fall back to original schema
+    const baseAnalysis = {
+      upload_id: uploadId,
+      user_id: userId,
+      overall_score: analysis.overall_score ?? 0,
+      ats_score: analysis.ats_score ?? 0,
+      strengths: analysis.strengths ?? [],
+      weak_areas: analysis.weak_areas ?? [],
+      missing_keywords: analysis.missing_keywords ?? [],
+      formatting_issues: analysis.formatting_issues ?? [],
+      grammar_issues: analysis.grammar_issues ?? [],
+      section_review: analysis.section_review ?? {},
+      recommended_job_titles: analysis.recommended_job_titles ?? [],
+      career_advice: analysis.career_advice ?? "",
+      raw_response: rawResponse,
+    };
+
+    let analysisData: any = null;
+    let analysisError: any = null;
+
+    // Try with new columns first
+    try {
+      const res = await insforge.database.from("cv_analysis").insert([{
+        ...baseAnalysis,
         improvement_summary: analysis.improvement_summary ?? null,
         score_breakdown: analysis.score_breakdown ?? null,
         cv_type: analysis.cv_type ?? "professional",
         experience_level: analysis.experience_level ?? "mid",
-      }])
-      .select("id")
-      .single();
+      }]).select("id").single();
+      analysisData = res.data;
+      analysisError = res.error;
+    } catch {}
+
+    // Fallback: insert with original columns only
+    if (!analysisData || analysisError) {
+      const res = await insforge.database.from("cv_analysis")
+        .insert([baseAnalysis]).select("id").single();
+      analysisData = res.data;
+      analysisError = res.error;
+    }
 
     if (analysisError || !analysisData) {
       console.error("Analysis save error:", analysisError);
