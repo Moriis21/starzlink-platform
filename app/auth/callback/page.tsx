@@ -1,49 +1,74 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { insforge } from "@/lib/insforge";
-import { Loader2 } from "lucide-react";
 
-function AuthCallbackContent() {
+export default function AuthCallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const handle = async () => {
-      const status = searchParams.get("insforge_status");
-      const type   = searchParams.get("insforge_type");
-
-      // Email verification callback
-      if (type === "verify_email") {
-        router.replace(status === "success" ? "/login?verified=1" : "/login?error=verification_failed");
-        return;
-      }
-
-      // OAuth callback — InsForge SDK handles the session exchange automatically
       try {
-        const { data, error } = await insforge.auth.getCurrentUser();
-        if (error || !data?.user) { router.replace("/login?error=oauth_failed"); return; }
+        await new Promise(r => setTimeout(r, 800));
+        const { data } = await insforge.auth.getCurrentUser();
+        const authUser = data?.user as any;
 
-        const uid = data.user.id;
-        const { data: profile } = await insforge.database
-          .from("profiles").select("phone,user_type,role").eq("id", uid).maybeSingle();
+        if (!authUser?.id) {
+          router.replace("/login?error=oauth_failed");
+          return;
+        }
 
-        if (!profile) {
-          // First-time OAuth user — create profile row and send to completion
-          await insforge.database.from("profiles").insert([{
-            id: uid,
-            full_name: data.user.profile?.name ?? data.user.email?.split("@")[0] ?? "",
+        const fullName =
+          authUser.profile?.name ??
+          authUser.user_metadata?.full_name ??
+          authUser.user_metadata?.name ??
+          authUser.email?.split("@")[0] ?? "User";
+
+        const avatarUrl =
+          authUser.profile?.avatar_url ??
+          authUser.user_metadata?.avatar_url ??
+          authUser.user_metadata?.picture ?? "";
+
+        const provider =
+          authUser.app_metadata?.provider ??
+          authUser.user_metadata?.provider ?? "social";
+
+        const { data: existingProfile } = await insforge.database
+          .from("profiles").select("id").eq("id", authUser.id).maybeSingle();
+
+        if (existingProfile?.id) {
+          await insforge.database.from("profiles").update({
+            last_login_at: new Date().toISOString(),
+            avatar_url: avatarUrl || undefined,
+            updated_at: new Date().toISOString(),
+          }).eq("id", authUser.id);
+        } else {
+          await insforge.database.from("profiles").upsert([{
+            id: authUser.id,
+            full_name: fullName,
+            email: authUser.email ?? "",
+            avatar_url: avatarUrl,
+            provider,
             role: "user",
             user_type: "student",
-          }]);
-          router.replace("/complete-profile");
-        } else if (!profile.phone) {
-          router.replace("/complete-profile");
-        } else {
-          const dest = (profile.role === "admin" || profile.role === "super_admin") ? "/admin" : "/dashboard";
-          router.replace(dest);
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }], { onConflict: "id" });
+
+          await insforge.database.from("user_credits").upsert([{
+            user_id: authUser.id, credits_balance: 5, credits_used: 0,
+          }], { onConflict: "user_id" }).catch(() => {});
+
+          await insforge.database.from("credit_transactions").insert([{
+            user_id: authUser.id,
+            transaction_type: "free_signup_credit",
+            credits_amount: 5,
+            reason: "Welcome! 5 free credits for your first CV analysis.",
+          }]).catch(() => {});
         }
+
+        router.replace("/dashboard");
       } catch {
         router.replace("/login?error=oauth_failed");
       }
@@ -52,24 +77,12 @@ function AuthCallbackContent() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f]">
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 text-center text-white">
-        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-300" />
-        <h2 className="text-lg font-bold mb-1">Signing you in…</h2>
-        <p className="text-blue-200 text-sm">Please wait a moment</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-[#1a3c8f] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-600 font-medium">Completing sign in…</p>
+        <p className="text-gray-400 text-sm mt-1">Please wait a moment</p>
       </div>
     </div>
-  );
-}
-
-export default function AuthCallbackPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f]">
-        <Loader2 className="w-10 h-10 animate-spin text-white" />
-      </div>
-    }>
-      <AuthCallbackContent />
-    </Suspense>
   );
 }

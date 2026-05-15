@@ -27,7 +27,7 @@ interface Payment {
   rejection_reason?: string;
   user_note?: string;
   created_at: string;
-  profiles?: { full_name: string; email: string };
+  profiles?: { full_name: string; email: string; phone?: string; avatar_url?: string };
 }
 
 const METHOD_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -219,8 +219,9 @@ export default function PaymentManagerPage() {
                     return (
                       <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-gray-900 text-sm">{(p.profiles as any)?.full_name || "Unknown"}</p>
-                          <p className="text-xs text-gray-400">{(p.profiles as any)?.email}</p>
+                          <p className="font-semibold text-gray-900 text-sm">{(p.profiles as any)?.full_name || "Unknown User"}</p>
+                          <p className="text-xs text-gray-400">{(p.profiles as any)?.email || `ID: ${(p.user_id||"").slice(0,12)}…`}</p>
+                          {(p.profiles as any)?.phone && <p className="text-xs text-gray-400">{(p.profiles as any).phone}</p>}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${m.color} ${m.bg}`}>{m.label}</span>
@@ -315,8 +316,12 @@ export default function PaymentManagerPage() {
                 {/* User info */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wide">User</p>
-                  <p className="font-bold text-gray-900">{(selected.profiles as any)?.full_name}</p>
-                  <p className="text-sm text-gray-500">{(selected.profiles as any)?.email}</p>
+                  <p className="font-bold text-gray-900">{(selected.profiles as any)?.full_name || "Unknown User"}</p>
+                  <p className="text-sm text-gray-500">{(selected.profiles as any)?.email || "—"}</p>
+                  {(selected.profiles as any)?.phone && (
+                    <p className="text-sm text-gray-500 mt-0.5">📞 {(selected.profiles as any).phone}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">ID: {selected.user_id?.slice(0, 16)}…</p>
                 </div>
                 {/* Payment info */}
                 <div className="grid grid-cols-2 gap-3">

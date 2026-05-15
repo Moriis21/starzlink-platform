@@ -85,10 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data?.user) {
       await loadUserProfile(data.user as InsForgeUser);
 
-      // Upsert profile row on first login
+      // Upsert profile on login — saves email, updates last_login_at
       await insforge.database.from("profiles").upsert([{
         id: data.user.id,
-        full_name: data.user.profile?.name ?? data.user.email,
+        full_name: (data.user as any).profile?.name ?? data.user.email,
+        email: data.user.email,
+        last_login_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }], { onConflict: "id" });
     }
   };
