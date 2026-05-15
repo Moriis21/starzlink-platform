@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       if (typeof authAny.sendOtp === "function") {
         await authAny.sendOtp({ email }).catch(() => {});
       } else {
-        await insforge.auth.resetPasswordForEmail({ email } as any).catch(() => {});
+        await insforge.auth.sendResetPasswordEmail({ email }).catch(() => {});
       }
       return NextResponse.redirect(
         `${APP_URL}/login?social=facebook&email=${encodeURIComponent(email)}&action=signin`
