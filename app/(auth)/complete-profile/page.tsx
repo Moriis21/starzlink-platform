@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { insforge } from "@/lib/insforge";
 import Logo from "@/components/ui/Logo";
 import toast from "react-hot-toast";
 import { User, Phone, MapPin, GraduationCap, CheckCircle, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
@@ -118,29 +117,43 @@ export default function CompleteProfilePage() {
     if (!validateStep(3)) { setStep(3); return; }
     setSaving(true);
     try {
-      await insforge.database.from("profiles").upsert([{
-        id: user!.id,
-        full_name: form.full_name.trim(),
-        email: user!.email,
-        phone: form.phone.trim(),
-        country: form.country,
-        county_state: form.county_state.trim(),
-        city_community: form.city_community.trim(),
-        address_description: form.address_description.trim(),
-        user_type: form.user_type,
-        education_level: form.education_level,
-        institution_workplace: form.institution_workplace.trim(),
-        area_of_interest: form.area_of_interest,
-        career_goal: form.career_goal.trim(),
-        profile_completed: true,
-        profile_completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }], { onConflict: "id" });
+      // Use server-side API (bypasses RLS, handles missing columns gracefully)
+      const res = await fetch("/api/profile/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user!.id,
+          full_name: form.full_name.trim(),
+          email: user!.email,
+          phone: form.phone.trim(),
+          country: form.country,
+          county_state: form.county_state.trim(),
+          city_community: form.city_community.trim(),
+          address_description: form.address_description.trim(),
+          user_type: form.user_type,
+          education_level: form.education_level,
+          institution_workplace: form.institution_workplace.trim(),
+          area_of_interest: form.area_of_interest,
+          career_goal: form.career_goal.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Failed to save profile. Please try again.");
+        setSaving(false);
+        return;
+      }
+
+      // Store completion flag in sessionStorage so gate doesn't re-check this session
+      try { sessionStorage.setItem("profileCompleted_" + user!.id, "1"); } catch {}
 
       toast.success("Profile completed! Welcome to StarzLink 🎉");
-      router.replace("/dashboard");
-    } catch (err: any) {
-      toast.error("Failed to save profile. Please try again.");
+      // Small delay so the toast is visible before redirect
+      setTimeout(() => router.replace("/dashboard"), 600);
+    } catch {
+      toast.error("Network error. Please check your connection and try again.");
     }
     setSaving(false);
   };
