@@ -43,8 +43,10 @@ export default function SignupPage() {
         await insforge.database.from("profiles").upsert([{
           id: data.user.id,
           full_name: form.full_name,
+          email: form.email,
           phone: form.phone,
           user_type: form.user_type,
+          role: "user",
         }], { onConflict: "id" });
       }
 

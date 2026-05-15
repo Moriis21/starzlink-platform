@@ -46,21 +46,18 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const from = (page - 1) * PAGE_SIZE;
-      let q = insforge.database
-        .from("profiles")
-        .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, from + PAGE_SIZE - 1);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      });
+      if (search) params.set("search", search);
+      if (roleFilter !== "all") params.set("role", roleFilter);
+      if (statusFilter !== "all") params.set("status", statusFilter);
 
-      if (search) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-      if (roleFilter !== "all") q = q.eq("role", roleFilter);
-      if (statusFilter === "suspended") q = q.eq("is_suspended", true);
-      if (statusFilter === "active") q = (q as any).neq("is_suspended", true);
-
-      const { data, count } = await q;
-      setUsers((data as any) ?? []);
-      setTotal(count ?? 0);
+      const res = await fetch(`/api/admin/users?${params}`);
+      const data = await res.json();
+      setUsers(data.users ?? []);
+      setTotal(data.total ?? 0);
     } catch {}
     setLoading(false);
   };

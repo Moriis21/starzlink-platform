@@ -7,27 +7,75 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "pending";
     const page = Number(searchParams.get("page") || 1);
+    const search = searchParams.get("search") || "";
     const limit = 20;
     const from = (page - 1) * limit;
 
+    // Step 1 — fetch payments (no join, avoids FK dependency)
     let q = insforge.database
       .from("payments")
-      .select(`*, profiles!user_id(full_name, email)`, { count: "exact" })
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, from + limit - 1);
 
     if (status === "pending") {
-      q = q.in("admin_approval_status", ["pending"]);
+      q = q.eq("admin_approval_status", "pending");
     } else if (status === "approved") {
       q = q.eq("admin_approval_status", "approved");
     } else if (status === "rejected") {
       q = q.eq("admin_approval_status", "rejected");
     }
 
-    const { data, error, count } = await q;
+    const { data: payments, error, count } = await q;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ payments: data ?? [], total: count ?? 0 });
+    const rows = payments ?? [];
+
+    // Step 2 — fetch profiles for all unique user_ids in this page
+    const userIds = [...new Set(rows.map((p: any) => p.user_id).filter(Boolean))];
+    let profileMap: Record<string, { full_name: string; email: string }> = {};
+
+    if (userIds.length > 0) {
+      // Try direct REST API with service key first (bypasses RLS), fall back to SDK
+      const serviceKey = process.env.INSFORGE_SERVICE_KEY;
+      if (serviceKey) {
+        try {
+          const res = await fetch(
+            `https://8qn72bza.us-east.insforge.app/rest/v1/profiles?select=id,full_name,email&id=in.(${userIds.join(",")})`,
+            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+          );
+          if (res.ok) {
+            const profiles = await res.json();
+            (profiles as any[]).forEach((p: any) => { profileMap[p.id] = { full_name: p.full_name, email: p.email }; });
+          }
+        } catch {}
+      }
+
+      // SDK fallback (works if RLS is not blocking admin reads)
+      if (Object.keys(profileMap).length === 0) {
+        const { data: profiles } = await insforge.database
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", userIds as string[]);
+        (profiles ?? []).forEach((p: any) => { profileMap[p.id] = { full_name: p.full_name, email: p.email }; });
+      }
+    }
+
+    // Step 3 — merge profiles into payments
+    const merged = rows.map((p: any) => ({
+      ...p,
+      profiles: profileMap[p.user_id] ?? { full_name: "Unknown User", email: p.user_id ?? "" },
+    }));
+
+    // Optional search filter on merged data
+    const filtered = search
+      ? merged.filter((p: any) =>
+          p.profiles?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+          p.profiles?.email?.toLowerCase().includes(search.toLowerCase())
+        )
+      : merged;
+
+    return NextResponse.json({ payments: filtered, total: count ?? 0 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
