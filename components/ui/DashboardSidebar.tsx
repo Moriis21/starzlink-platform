@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Briefcase, GraduationCap, BookOpen, Bookmark,
-  Star, Users, Bell, User, LogOut, Sparkles, ChevronRight,
+  Users, Bell, User, LogOut, Sparkles, ChevronRight,
   FileText, Mic, Mail, Link2, Grid3x3
 } from "lucide-react";
 
