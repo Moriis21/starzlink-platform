@@ -9,7 +9,7 @@ function generateState(): string {
 }
 
 export async function GET() {
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
+  const clientId = process.env.LINKEDIN_CLIENT_ID?.trim();
   if (!clientId) {
     return NextResponse.redirect(
       new URL("/login?error=linkedin_not_configured", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000")

@@ -22,8 +22,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${APP_URL}/login?error=oauth_failed`);
   }
 
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+  const clientId = process.env.LINKEDIN_CLIENT_ID?.trim();
+  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET?.trim();
   const redirectUri = `${APP_URL}/api/auth/linkedin/callback`;
 
   if (!clientId || !clientSecret) {
