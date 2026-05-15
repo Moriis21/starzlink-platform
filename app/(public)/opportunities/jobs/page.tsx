@@ -52,11 +52,11 @@ export default function JobsPage() {
   return (
     <div>
       {/* Hero */}
-      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#2563eb] py-14 px-4 text-white">
+      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#2563eb] py-8 sm:py-14 px-4 text-white">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-extrabold mb-2">Find the Right Opportunity for You</h1>
+          <h1 className="text-2xl sm:text-4xl font-extrabold mb-2">Find the Right Opportunity for You</h1>
           <p className="text-blue-200 mb-6">Explore verified job opportunities from top organizations around the world.</p>
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form onSubmit={handleSearch} className="space-y-3 sm:space-y-0 sm:flex sm:gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -68,7 +68,7 @@ export default function JobsPage() {
             <select
               value={filters.category}
               onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
-              className="py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
+              className="w-full sm:w-auto py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
             >
               <option value="">All Categories</option>
               {jobCategories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -76,12 +76,13 @@ export default function JobsPage() {
             <select
               value={filters.location}
               onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
-              className="py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
+              className="w-full sm:w-auto py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
             >
+              <option value="">All Locations</option>
               {locations.map(l => <option key={l} value={l === "All Locations" ? "" : l}>{l}</option>)}
             </select>
-            <button type="submit" className="px-6 py-3.5 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50">
-              Search Jobs
+            <button type="submit" className="w-full sm:w-auto px-6 py-3.5 bg-white text-[#0d1b4b] font-bold rounded-xl hover:bg-blue-50 transition-colors">
+              Search
             </button>
           </form>
         </div>

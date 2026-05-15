@@ -44,16 +44,33 @@ export default function ScholarshipsPage() {
 
   return (
     <div>
-      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-14 px-4 text-white">
+      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-8 sm:py-14 px-4 text-white">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-extrabold mb-2">Discover Scholarships Worldwide</h1>
+          <h1 className="text-2xl sm:text-4xl font-extrabold mb-2">Discover Scholarships Worldwide</h1>
           <p className="text-blue-200 mb-6">Find fully-funded and partial scholarships from top universities and organizations.</p>
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form onSubmit={handleSearch} className="space-y-3 sm:space-y-0 sm:flex sm:gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search scholarships..." className="w-full pl-10 pr-4 py-3.5 rounded-xl text-gray-900 text-sm focus:outline-none border-0" />
             </div>
-            <button type="submit" className="px-6 py-3.5 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50">Search</button>
+            <select
+              value={filters.study_level}
+              onChange={e => setFilters(f => ({ ...f, study_level: e.target.value }))}
+              className="w-full sm:w-auto py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
+            >
+              <option value="">All Study Levels</option>
+              {studyLevels.map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}
+            </select>
+            <select
+              value={filters.country}
+              onChange={e => setFilters(f => ({ ...f, country: e.target.value }))}
+              className="w-full sm:w-auto py-3.5 px-4 rounded-xl text-gray-700 text-sm focus:outline-none bg-white"
+            >
+              {countries.map(c => <option key={c} value={c === "All Countries" ? "" : c}>{c}</option>)}
+            </select>
+            <button type="submit" className="w-full sm:w-auto px-6 py-3.5 bg-white text-[#0d1b4b] font-bold rounded-xl hover:bg-blue-50 transition-colors">
+              Search
+            </button>
           </form>
         </div>
       </div>

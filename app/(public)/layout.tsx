@@ -3,6 +3,7 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
+import FloatingDashboardButton from "@/components/ui/FloatingDashboardButton";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className={`flex-1 ${user ? "pb-16 lg:pb-0" : ""}`}>{children}</main>
       <Footer />
       {user && <MobileBottomNav />}
+      <FloatingDashboardButton />
     </div>
   );
 }

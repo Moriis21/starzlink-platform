@@ -163,7 +163,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#0a1628]/90 via-[#0d1b4b]/80 to-[#1a3c8f]/70" />
           </div>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 py-20 sm:py-28">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 py-10 sm:py-16 lg:py-24">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div>
                 {/* Badge */}
@@ -172,7 +172,7 @@ export default function HomePage() {
                   WELCOME TO STARZLINK
                 </div>
 
-                <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.1] mb-6">
+                <h1 className="text-3xl sm:text-4xl lg:text-[3.4rem] font-extrabold leading-[1.1] mb-4">
                   Your Pathway to{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">
                     Opportunities
@@ -180,11 +180,11 @@ export default function HomePage() {
                   and a Better Tomorrow.
                 </h1>
 
-                <p className="text-lg text-blue-100 mb-8 leading-relaxed max-w-xl">
+                <p className="text-base text-blue-100 mb-5 leading-relaxed max-w-xl">
                   Discover scholarships, job leads, trainings, and campus updates all in one place. Empowering minds, creating impact, inspiring futures.
                 </p>
 
-                <div className="flex flex-wrap gap-3 mb-10">
+                <div className="flex flex-wrap gap-3 mb-6">
                   <Link
                     href="/opportunities"
                     className="flex items-center gap-2 bg-white text-[#0d1b4b] px-6 py-3.5 rounded-xl font-bold text-sm hover:bg-blue-50 transition-colors shadow-lg shadow-black/20"
@@ -200,7 +200,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Trust badges */}
-                <div className="flex flex-wrap gap-4 text-sm text-blue-200">
+                <div className="flex flex-wrap gap-3 text-sm text-blue-200">
                   {[
                     { icon: CheckCircle, text: "100% Verified Listings" },
                     { icon: Globe, text: "50+ Countries" },
@@ -237,7 +237,7 @@ export default function HomePage() {
             </div>
 
             {/* Mobile stats — real data */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10 lg:hidden">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 lg:hidden">
               {[
                 { value: statsLoaded ? platformStats.opportunities.toLocaleString() : "—", label: "Opportunities", icon: Briefcase },
                 { value: statsLoaded ? platformStats.members.toLocaleString() : "—", label: "Members", icon: Users },
