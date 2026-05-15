@@ -28,7 +28,7 @@ export async function DELETE(req: NextRequest) {
       try {
         const urlParts = fileUrl.split("/cv-files/");
         if (urlParts.length > 1) {
-          await insforge.storage.from("cv-files").remove([urlParts[1]]);
+          await (insforge.storage.from("cv-files") as any).remove(urlParts[1]);
         }
       } catch {}
     }
