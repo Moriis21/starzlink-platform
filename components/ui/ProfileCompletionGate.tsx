@@ -23,12 +23,14 @@ export default function ProfileCompletionGate({ children }: Props) {
     }
 
     // Check if profile is complete
-    insforge.database
-      .from("profiles")
-      .select("profile_completed, phone, country, county_state, city_community")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    const checkProfile = async () => {
+      try {
+        const { data } = await insforge.database
+          .from("profiles")
+          .select("profile_completed, phone, country, county_state, city_community")
+          .eq("id", user.id)
+          .maybeSingle();
+
         const p = data as any;
         const isComplete =
           p?.profile_completed === true ||
@@ -39,11 +41,13 @@ export default function ProfileCompletionGate({ children }: Props) {
         } else {
           setChecking(false);
         }
-      })
-      .catch(() => {
+      } catch {
         // If check fails, allow access (don't block on DB error)
         setChecking(false);
-      });
+      }
+    };
+
+    checkProfile();
   }, [user, loading]);
 
   if (loading || checking) {
