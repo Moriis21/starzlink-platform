@@ -21,12 +21,12 @@ interface Message {
 
 // ── Quick action chips ─────────────────────────────────────────────────────────
 const QUICK_ACTIONS = [
-  { icon: GraduationCap, label: "Find Scholarships", color: "bg-blue-50 border-blue-200 text-blue-700", prompt: "Show me available scholarships for Liberian students" },
   { icon: Calculator, label: "Calculate GPA", color: "bg-purple-50 border-purple-200 text-purple-700", prompt: "Help me calculate my GPA and recommend scholarships" },
-  { icon: Briefcase, label: "Browse Internships", color: "bg-green-50 border-green-200 text-green-700", prompt: "What internship opportunities are available on StarzLink?" },
+  { icon: GraduationCap, label: "Find Scholarships", color: "bg-blue-50 border-blue-200 text-blue-700", prompt: "Show me available scholarships for Liberian students" },
+  { icon: Briefcase, label: "Improve my CV", color: "bg-green-50 border-green-200 text-green-700", prompt: "How can I improve my CV to get more opportunities?" },
   { icon: Share2, label: "Study Abroad", color: "bg-orange-50 border-orange-200 text-orange-700", prompt: "What fully funded study abroad programs are available?" },
-  { icon: Phone, label: "Contact Info", color: "bg-red-50 border-red-200 text-red-700", prompt: "What are the contact details for StarzLink?" },
-  { icon: BookOpen, label: "Get Started", color: "bg-teal-50 border-teal-200 text-teal-700", prompt: "How do I get started and find opportunities on StarzLink?" },
+  { icon: BookOpen, label: "Application Letter", color: "bg-teal-50 border-teal-200 text-teal-700", prompt: "Help me write a strong application letter for a scholarship" },
+  { icon: Sparkles, label: "Find Internships", color: "bg-pink-50 border-pink-200 text-pink-700", prompt: "What internship opportunities are available on StarzLink?" },
 ];
 
 // ── Render markdown-style links and bold ──────────────────────────────────────
@@ -281,7 +281,8 @@ export default function ChatBot() {
   return (
     <>
       {/* ── Floating toggle button ─────────────────────────────────────────── */}
-      <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-2">
+      {/* bottom-[88px] on mobile keeps button above the 64px bottom nav + spacing */}
+      <div className="fixed bottom-[88px] right-4 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end gap-2">
         {/* Welcome tooltip */}
         <AnimatePresence>
           {showWelcome && !isOpen && messages.length === 0 && (
@@ -350,19 +351,19 @@ export default function ChatBot() {
 
             <motion.div
               ref={panelRef}
-              /* Mobile: full-width bottom sheet; Desktop: floating panel */
+              /* Mobile: sits above bottom nav (160px from bottom); Desktop: floating panel */
               className={[
                 "fixed z-[9998] flex flex-col bg-white overflow-hidden shadow-2xl border border-gray-100",
-                // Mobile: full width, bottom sheet — rises above toggle button
-                "bottom-[72px] left-2 right-2 rounded-2xl",
+                // Mobile: full width, above bottom nav and AI button
+                "bottom-[160px] left-3 right-3 rounded-[18px]",
                 // Desktop: floating panel above button, fixed width
                 "sm:bottom-[88px] sm:right-6 sm:left-auto sm:rounded-2xl sm:w-[380px]",
               ].join(" ")}
               style={{
                 height: isMinimized
                   ? "auto"
-                  : "min(calc(100svh - 100px), 600px)",
-                maxHeight: "calc(100svh - 100px)",
+                  : "min(72vh, 520px)",
+                maxHeight: "min(72vh, 520px)",
               }}
               initial={{ opacity: 0, y: 60 }}
               animate={{ opacity: 1, y: 0 }}

@@ -42,29 +42,38 @@ export default function TrainingsPage() {
 
   return (
     <div>
-      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-14 px-4 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-8 sm:py-14 px-4 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"><div className="absolute right-10 top-5 w-64 h-64 bg-blue-300 rounded-full blur-3xl" /></div>
         <div className="max-w-4xl mx-auto relative z-10">
-          <h1 className="text-4xl font-extrabold mb-2">Build Skills. Boost Your Future.</h1>
-          <p className="text-blue-200 mb-6">Explore professional training programs and certifications designed to help you grow and succeed.</p>
-          <form onSubmit={handleSearch} className="flex gap-2 bg-white/10 rounded-2xl p-2">
+          <h1 className="text-2xl sm:text-4xl font-extrabold mb-2">Build Skills. Boost Your Future.</h1>
+          <p className="text-blue-200 mb-5 text-sm sm:text-base">Explore professional training programs and certifications to help you grow.</p>
+          <form onSubmit={handleSearch} className="space-y-3 sm:space-y-0 sm:flex sm:gap-2 bg-white/10 rounded-2xl p-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search training programs, skills or keywords" className="w-full pl-10 pr-4 py-3 rounded-xl text-gray-900 text-sm focus:outline-none" />
             </div>
-            <select className="py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
-              <option>All Categories</option>
-              {categories.map(c => <option key={c}>{c}</option>)}
+            <select
+              value={filters.category}
+              onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+              className="w-full sm:w-auto py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
+              <option value="">All Categories</option>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select className="py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
-              <option>All Levels</option>
-              {levels.map(l => <option key={l}>{l}</option>)}
+            <select
+              value={filters.level}
+              onChange={e => setFilters(f => ({ ...f, level: e.target.value }))}
+              className="w-full sm:w-auto py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
+              <option value="">All Levels</option>
+              {levels.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <select className="py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
-              <option>All Delivery Modes</option>
-              {modes.map(m => <option key={m}>{m}</option>)}
+            <select
+              value={filters.mode}
+              onChange={e => setFilters(f => ({ ...f, mode: e.target.value }))}
+              className="w-full sm:w-auto py-3 px-3 rounded-xl text-gray-700 text-sm bg-white focus:outline-none">
+              <option value="">All Modes</option>
+              {modes.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
-            <button type="submit" className="px-5 py-3 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50">Search Trainings</button>
+            <button type="submit" className="w-full sm:w-auto px-5 py-3 bg-white text-[#1a3c8f] font-bold rounded-xl hover:bg-blue-50">Search</button>
           </form>
         </div>
       </div>
