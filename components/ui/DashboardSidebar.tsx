@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { label: "Trainings", href: "/trainings", icon: BookOpen },
   { label: "Referrals", href: "/referrals", icon: Users },
   { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Profile", href: "/profile", icon: User },
+  { label: "Profile Settings", href: "/dashboard/settings/profile", icon: User },
   { label: "Account Settings", href: "/dashboard/settings/account", icon: Settings },
 ];
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { insforge } from "@/lib/insforge";
+import Link from "next/link";
 import { formatDate, cn } from "@/lib/utils";
 import {
   Search, Users, Loader2, MoreVertical, ShieldOff, ShieldCheck,
@@ -213,9 +214,9 @@ export default function AdminUsersPage() {
                         <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
                       ) : (
                         <>
-                          <button onClick={() => setViewUser(u)} className="p-1.5 text-gray-400 hover:text-[#1a3c8f] hover:bg-blue-50 rounded-lg" title="View">
+                          <Link href={`/admin/users/${u.id}`} className="p-1.5 text-gray-400 hover:text-[#1a3c8f] hover:bg-blue-50 rounded-lg" title="View Full Profile">
                             <Eye className="w-4 h-4" />
-                          </button>
+                          </Link>
                           <div className="relative">
                             <button
                               onClick={() => setOpenMenu(openMenu === u.id ? null : u.id)}
