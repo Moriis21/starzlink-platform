@@ -54,31 +54,39 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [statsRes, logsRes, jobsRes, usersTypeRes] = await Promise.allSettled([
-          fetch("/api/stats").then(r => r.json()),
-          insforge.database.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(6),
-          insforge.database.from("jobs").select("id,title,category,company,created_at,status").order("created_at", { ascending: false }).limit(5),
-          insforge.database.from("profiles").select("user_type", { count: "exact" }).limit(1000),
-        ]);
+        // Query all counts directly from client side — SDK works correctly here
+        const [jobsCount, scholCount, trainCount, campusCount, logsRes, jobsRes, usersTypeRes] =
+          await Promise.allSettled([
+            insforge.database.from("jobs").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("scholarships").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("trainings").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("campus_updates").select("id", { count: "exact" }).limit(1),
+            insforge.database.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(6),
+            insforge.database.from("jobs").select("id,title,category,company,created_at,status").order("created_at", { ascending: false }).limit(5),
+            insforge.database.from("profiles").select("id,user_type").limit(1000),
+          ]);
 
-        if (statsRes.status === "fulfilled") {
-          const d = statsRes.value;
-          setStats({
-            total_users: d.total_users ?? 0,
-            total_jobs: d.total_jobs ?? 0,
-            total_scholarships: d.total_scholarships ?? 0,
-            total_trainings: d.total_trainings ?? 0,
-            total_campus_updates: d.total_campus_updates ?? 0,
-          } as AdminStats);
-          setStatsLoading(false);
-        } else {
-          setStatsLoading(false);
-        }
+        // Get real user count from admin API (bypasses profiles RLS)
+        let userCount = 0;
+        try {
+          const uRes = await fetch("/api/admin/users?limit=1000");
+          const uData = await uRes.json();
+          userCount = uData.total ?? (uData.users?.length ?? 0);
+        } catch {}
+
+        setStats({
+          total_users: userCount,
+          total_jobs: jobsCount.status === "fulfilled" ? (jobsCount.value as any).count ?? 0 : 0,
+          total_scholarships: scholCount.status === "fulfilled" ? (scholCount.value as any).count ?? 0 : 0,
+          total_trainings: trainCount.status === "fulfilled" ? (trainCount.value as any).count ?? 0 : 0,
+          total_campus_updates: campusCount.status === "fulfilled" ? (campusCount.value as any).count ?? 0 : 0,
+        } as AdminStats);
+        setStatsLoading(false);
 
         if (logsRes.status === "fulfilled") setActivityLogs((logsRes.value as any).data ?? []);
         if (jobsRes.status === "fulfilled") setRecentJobs((jobsRes.value as any).data ?? []);
 
-        // User distribution from real data
+        // User distribution from real profile data
         if (usersTypeRes.status === "fulfilled") {
           const rows: any[] = (usersTypeRes.value as any).data ?? [];
           const counts: Record<string, number> = {};
