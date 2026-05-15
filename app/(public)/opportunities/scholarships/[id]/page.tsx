@@ -10,6 +10,9 @@ import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import AuthGate from "@/components/ui/AuthGate";
 import ShareButtons from "@/components/ui/ShareButtons";
+import SkillGapAnalyzer from "@/components/ui/SkillGapAnalyzer";
+import OpportunityReviews from "@/components/ui/OpportunityReviews";
+import MatchScoreBadge from "@/components/ui/MatchScoreBadge";
 
 export default function ScholarshipDetailPage() {
   const { id } = useParams();
@@ -73,9 +76,34 @@ export default function ScholarshipDetailPage() {
             {item.benefits && <div className="bg-white rounded-2xl border border-gray-100 p-6"><h2 className="font-bold text-gray-900 text-lg mb-3">Benefits</h2><div className="space-y-2">{item.benefits.split("\n").filter(Boolean).map((b, i) => <div key={i} className="flex items-start gap-2 text-sm text-gray-600"><CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />{b}</div>)}</div></div>}
             {item.eligibility && <div className="bg-white rounded-2xl border border-gray-100 p-6"><h2 className="font-bold text-gray-900 text-lg mb-3">Eligibility Requirements</h2><div className="space-y-2">{item.eligibility.split("\n").filter(Boolean).map((e, i) => <div key={i} className="flex items-start gap-2 text-sm text-gray-600"><span className="w-1.5 h-1.5 rounded-full bg-[#1a3c8f] flex-shrink-0 mt-2" />{e}</div>)}</div></div>}
             {item.required_documents && <div className="bg-white rounded-2xl border border-gray-100 p-6"><h2 className="font-bold text-gray-900 text-lg mb-3">Required Documents</h2><div className="space-y-2">{item.required_documents.split("\n").filter(Boolean).map((d, i) => <div key={i} className="flex items-start gap-2 text-sm text-gray-600"><FileText className="w-4 h-4 text-[#1a3c8f] flex-shrink-0 mt-0.5" />{d}</div>)}</div></div>}
+
+            {/* Skill Gap Analyzer */}
+            <SkillGapAnalyzer
+              opportunityId={item.id}
+              opportunityType="scholarship"
+              opportunityTitle={item.title}
+              requirements={item.eligibility}
+              description={item.description}
+            />
+
+            {/* Reviews */}
+            <OpportunityReviews
+              opportunityId={item.id}
+              opportunityType="scholarship"
+              opportunityTitle={item.title}
+            />
           </div>
 
           <div className="space-y-4">
+            {/* Match Score */}
+            <MatchScoreBadge
+              opportunityId={item.id}
+              opportunityType="scholarship"
+              opportunityTitle={item.title}
+              opportunityData={{ location: item.country, requirements: item.eligibility, description: item.description, education_level: item.study_level }}
+              size="md"
+            />
+
             <div className="bg-white rounded-2xl border border-gray-100 p-5 sticky top-20">
               {daysLeft > 0 ? (
                 <div className={cn("text-center mb-4 p-3 rounded-xl", daysLeft <= 7 ? "bg-red-50" : "bg-blue-50")}>

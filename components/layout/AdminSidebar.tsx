@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
   Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
-  Calendar, Trophy, Gift, Crown, CreditCard, Star, Archive
+  Calendar, Trophy, Gift, Crown, CreditCard, Star, Archive, Brain
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -48,9 +48,20 @@ const menuItems = [
   { label: "Payments", href: "/admin/payment-manager", icon: CreditCard },
   { label: "Redemptions", href: "/admin/redemptions", icon: Gift },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { label: "Reports", href: "/admin/reports", icon: TrendingUp },
+  { label: "Activity Dashboard", href: "/admin/activity-dashboard", icon: TrendingUp },
+  { label: "Ads Manager", href: "/admin/ads", icon: Megaphone },
+  {
+    label: "AI Tools",
+    icon: Brain,
+    children: [
+      { label: "Scholarship Assistance", href: "/admin/scholarship-assistance" },
+      { label: "Reviews & Reports", href: "/admin/opportunity-reviews" },
+      { label: "WhatsApp Logs", href: "/admin/whatsapp-logs" },
+    ]
+  },
+  { label: "Reports", href: "/admin/reports", icon: ClipboardList },
   { label: "Expired Content", href: "/admin/expired-content", icon: Archive },
-  { label: "Activity Logs", href: "/admin/activity-logs", icon: ClipboardList },
+  { label: "Activity Logs", href: "/admin/activity-logs", icon: Activity },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

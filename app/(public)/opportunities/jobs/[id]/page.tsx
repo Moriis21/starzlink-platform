@@ -11,6 +11,9 @@ import toast from "react-hot-toast";
 import WhatsAppBanner from "@/components/ui/WhatsAppBanner";
 import AuthGate from "@/components/ui/AuthGate";
 import ShareButtons from "@/components/ui/ShareButtons";
+import SkillGapAnalyzer from "@/components/ui/SkillGapAnalyzer";
+import OpportunityReviews from "@/components/ui/OpportunityReviews";
+import MatchScoreBadge from "@/components/ui/MatchScoreBadge";
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -165,10 +168,35 @@ export default function JobDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Skill Gap Analyzer */}
+            <SkillGapAnalyzer
+              opportunityId={job.id}
+              opportunityType="job"
+              opportunityTitle={job.title}
+              requirements={job.requirements}
+              description={job.description}
+            />
+
+            {/* Reviews */}
+            <OpportunityReviews
+              opportunityId={job.id}
+              opportunityType="job"
+              opportunityTitle={job.title}
+            />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-4">
+            {/* Match Score */}
+            <MatchScoreBadge
+              opportunityId={job.id}
+              opportunityType="job"
+              opportunityTitle={job.title}
+              opportunityData={{ location: job.location, category: (job as any).category, requirements: job.requirements, description: job.description }}
+              size="md"
+            />
+
             {/* Apply Card */}
             <div className="bg-white rounded-2xl border border-gray-100 p-5 sticky top-20">
               {daysLeft > 0 ? (
