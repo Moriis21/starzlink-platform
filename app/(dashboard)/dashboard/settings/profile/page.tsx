@@ -7,13 +7,9 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import toast from "react-hot-toast";
 import { User, Phone, MapPin, GraduationCap, Save, Loader2, CheckCircle, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ProfessionSearch from "@/components/ui/ProfessionSearch";
+import { COUNTRY_NAMES, getStatesForCountry, getCitiesForState } from "@/lib/location-data";
 
-const COUNTRIES = [
-  "Liberia", "Sierra Leone", "Ghana", "Nigeria", "Kenya", "South Africa",
-  "United States", "United Kingdom", "Canada", "Germany", "France",
-  "India", "China", "Cameroon", "Côte d'Ivoire", "Senegal", "Ethiopia",
-  "Tanzania", "Uganda", "Rwanda", "Other",
-];
 const LANGUAGES = [
   "English", "French", "Arabic", "Spanish", "Portuguese", "Swahili",
   "Hausa", "Yoruba", "Igbo", "Amharic", "Zulu", "Other",
@@ -32,6 +28,7 @@ const AREAS = [
 
 interface ProfileForm {
   full_name: string; email: string; phone: string; whatsapp_number: string;
+  gender: string;
   country: string; county_state: string; city_community: string;
   current_location: string; address_description: string;
   preferred_language: string; occupation: string; education_level: string;
@@ -41,6 +38,7 @@ interface ProfileForm {
 
 const EMPTY: ProfileForm = {
   full_name: "", email: "", phone: "", whatsapp_number: "",
+  gender: "",
   country: "", county_state: "", city_community: "",
   current_location: "", address_description: "",
   preferred_language: "", occupation: "", education_level: "",
@@ -79,6 +77,7 @@ export default function ProfileSettingsPage() {
             email: p.email || user.email || "",
             phone: p.phone || "",
             whatsapp_number: p.whatsapp_number || "",
+            gender: p.gender || "",
             country: p.country || "",
             county_state: p.county_state || "",
             city_community: p.city_community || "",
@@ -173,7 +172,7 @@ export default function ProfileSettingsPage() {
         {/* Read-only view of saved data */}
         <div className="space-y-4">
           {[
-            { title: "Personal Information", rows: [["Full Name", form.full_name], ["Email", form.email], ["Phone", form.phone], ["WhatsApp", form.whatsapp_number], ["User Type", form.user_type], ["Bio", form.bio]] },
+            { title: "Personal Information", rows: [["Full Name", form.full_name], ["Email", form.email], ["Phone", form.phone], ["WhatsApp", form.whatsapp_number], ["Gender", form.gender], ["User Type", form.user_type], ["Bio", form.bio]] },
             { title: "Location", rows: [["Country", form.country], ["County / State", form.county_state], ["City / Community", form.city_community], ["Current Location", form.current_location], ["Address", form.address_description]] },
             { title: "Language & Occupation", rows: [["Preferred Language", form.preferred_language], ["Occupation", form.occupation], ["Institution", form.institution_workplace]] },
             { title: "Education & Career", rows: [["Education Level", form.education_level], ["Area of Interest", form.area_of_interest], ["Career Goal", form.career_goal]] },
@@ -254,6 +253,23 @@ export default function ProfileSettingsPage() {
               className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f] resize-none" />
           </div>
 
+          {/* Gender */}
+          <div className="mt-4">
+            {lbl("Gender", true)}
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {["Male", "Female", "Prefer not to say", "Other"].map(g => (
+                <button key={g} type="button"
+                  onClick={() => { setForm(f => ({ ...f, gender: g })); if (errors.gender) setErrors(e => ({ ...e, gender: undefined })); }}
+                  className={cn("py-2.5 rounded-xl text-sm font-medium border transition-colors text-center",
+                    form.gender === g ? "bg-[#1a3c8f] text-white border-[#1a3c8f]" : "border-gray-200 text-gray-600 hover:border-[#1a3c8f]"
+                  )}>
+                  {g}
+                </button>
+              ))}
+            </div>
+            {errors.gender && <p className="text-xs text-red-500 mt-1">{errors.gender}</p>}
+          </div>
+
           {/* User type */}
           <div className="mt-4">
             <label className="text-sm font-semibold text-gray-700 block mb-2">
@@ -283,18 +299,27 @@ export default function ProfileSettingsPage() {
             {/* Country */}
             <div>
               {lbl("Country", true)}
-              <select value={form.country} onChange={handleChange("country")} className={selectClass(!!errors.country)}>
+              <select value={form.country} onChange={e => { setForm(f => ({ ...f, country: e.target.value, county_state: "" })); if (errors.country) setErrors(er => ({ ...er, country: undefined })); }} className={selectClass(!!errors.country)}>
                 <option value="">Select country</option>
-                {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                {COUNTRY_NAMES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
               {errors.country && <p className="text-xs text-red-500 mt-1">{errors.country}</p>}
             </div>
 
-            {/* County/State */}
+            {/* County/State - dynamic based on country */}
             <div>
               {lbl("County / State", true)}
-              <input value={form.county_state} onChange={handleChange("county_state")}
-                placeholder="e.g. Montserrado, Lagos" className={inputClass(!!errors.county_state)} />
+              {form.country && getStatesForCountry(form.country).length > 0 ? (
+                <select value={form.county_state}
+                  onChange={e => { setForm(f => ({ ...f, county_state: e.target.value })); if (errors.county_state) setErrors(er => ({ ...er, county_state: undefined })); }}
+                  className={selectClass(!!errors.county_state)}>
+                  <option value="">Select county / state</option>
+                  {getStatesForCountry(form.country).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              ) : (
+                <input value={form.county_state} onChange={handleChange("county_state")}
+                  placeholder="e.g. Montserrado, Lagos" className={inputClass(!!errors.county_state)} />
+              )}
               {errors.county_state && <p className="text-xs text-red-500 mt-1">{errors.county_state}</p>}
             </div>
 
@@ -344,10 +369,13 @@ export default function ProfileSettingsPage() {
 
             {/* Occupation */}
             <div>
-              {lbl("Occupation / Job Title", true)}
-              <input value={form.occupation} onChange={handleChange("occupation")}
-                placeholder="e.g. Software Engineer, Teacher" className={inputClass(!!errors.occupation)} />
-              {errors.occupation && <p className="text-xs text-red-500 mt-1">{errors.occupation}</p>}
+              {lbl("Occupation / Profession", true)}
+              <ProfessionSearch
+                value={form.occupation}
+                onChange={val => { setForm(f => ({ ...f, occupation: val })); if (errors.occupation) setErrors(e => ({ ...e, occupation: undefined })); }}
+                error={errors.occupation}
+                required
+              />
             </div>
 
             {/* Institution */}
