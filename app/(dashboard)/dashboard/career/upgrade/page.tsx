@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Check, X, Crown, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import PaymentModal from "@/components/payment/PaymentModal";
 
 const FEATURES = [
   { label: "CV Upload & Analysis", free: true, pro: true },
@@ -23,31 +24,13 @@ const FEATURES = [
 export default function UpgradePage() {
   const { user } = useAuth();
   const { sub, isPro, refresh } = useSubscription();
-  const [loading, setLoading] = useState<"monthly" | "yearly" | null>(null);
-  const [success, setSuccess] = useState(false);
   const [activePlan, setActivePlan] = useState<"monthly" | "yearly">("yearly");
+  const [success, setSuccess] = useState(false);
+  const [paymentModal, setPaymentModal] = useState<{ open: boolean; plan: "monthly" | "yearly" | null }>({ open: false, plan: null });
 
-  const handleUpgrade = async (plan: "monthly" | "yearly") => {
+  const handleUpgrade = (plan: "monthly" | "yearly") => {
     if (!user?.id) return;
-    setLoading(plan);
-    try {
-      const res = await fetch("/api/career/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, plan }),
-      });
-
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error || "Subscription failed");
-      }
-
-      setSuccess(true);
-      refresh();
-    } catch (err: any) {
-      alert(err.message || "Failed to upgrade. Please try again.");
-    }
-    setLoading(null);
+    setPaymentModal({ open: true, plan });
   };
 
   return (
@@ -124,10 +107,10 @@ export default function UpgradePage() {
             </ul>
             <button
               onClick={(e) => { e.stopPropagation(); handleUpgrade("monthly"); }}
-              disabled={loading === "monthly"}
+              disabled={paymentModal.open}
               className="w-full bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold py-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading === "monthly" ? <><Loader2 className="w-4 h-4 animate-spin" /> Activating...</> : "Get Pro Monthly"}
+              Get Pro Monthly
             </button>
           </motion.div>
 
@@ -159,10 +142,10 @@ export default function UpgradePage() {
             </ul>
             <button
               onClick={(e) => { e.stopPropagation(); handleUpgrade("yearly"); }}
-              disabled={loading === "yearly"}
+              disabled={paymentModal.open}
               className="w-full bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold py-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading === "yearly" ? <><Loader2 className="w-4 h-4 animate-spin" /> Activating...</> : "Get Pro Yearly"}
+              Get Pro Yearly
             </button>
           </motion.div>
         </div>
@@ -200,6 +183,24 @@ export default function UpgradePage() {
           ))}
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {paymentModal.open && paymentModal.plan && (
+        <PaymentModal
+          isOpen={paymentModal.open}
+          onClose={() => setPaymentModal({ open: false, plan: null })}
+          amount={paymentModal.plan === "yearly" ? 50 : 5}
+          currency="USD"
+          itemType={paymentModal.plan === "yearly" ? "pro_yearly" : "pro_monthly"}
+          itemLabel={paymentModal.plan === "yearly" ? "Pro Yearly Plan — $50/year" : "Pro Monthly Plan — $5/month"}
+          paymentType="subscription"
+          onPaymentSubmitted={() => {
+            setPaymentModal({ open: false, plan: null });
+            setSuccess(true);
+            refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
