@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Trophy, CheckCircle, XCircle, Clock, Star, Loader2, ChevronRight, Award, RotateCcw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import AIToolNav from "@/components/ui/AIToolNav";
 
 type Assessment = { id: string; skill_name: string; category: string; description: string; pass_mark: number; time_limit_minutes: number };
 type Question = { id: string; question: string; options: string[]; sort_order: number; explanation?: string };
@@ -164,6 +165,9 @@ export default function SkillsAssessmentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <AIToolNav currentLabel="Skills Assessment" />
+      </div>
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-12 px-4 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4"><Trophy className="w-7 h-7 text-yellow-300" /></div>

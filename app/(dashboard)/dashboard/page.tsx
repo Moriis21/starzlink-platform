@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { savedApi, jobsApi, scholarshipsApi, trainingsApi } from "@/lib/api";
-import { Bookmark, Eye, Star, User, Bell, Briefcase, GraduationCap, BookOpen, Settings, TrendingUp, ChevronRight, MapPin, Calendar, Trash2, Sparkles, Trophy, Zap, Target, FileText, Globe } from "lucide-react";
+import { Bookmark, Eye, Star, User, Bell, Briefcase, GraduationCap, BookOpen, Settings, TrendingUp, ChevronRight, MapPin, Calendar, Trash2, Sparkles } from "lucide-react";
 import { formatDate, getDaysLeft, cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -114,23 +114,21 @@ export default function UserDashboardPage() {
             </a>
           </div>
 
-          {/* AI Tools Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-[#1a3c8f]" /> AI Tools</h4>
-            <div className="space-y-2">
-              {[
-                { label: "Essay Helper", href: "/tools/essay-helper", icon: FileText, color: "text-purple-500" },
-                { label: "Skills Assessment", href: "/tools/skills-assessment", icon: Trophy, color: "text-yellow-500" },
-                { label: "Portfolio Builder", href: "/tools/portfolio-builder", icon: Globe, color: "text-blue-500" },
-                { label: "Scholarship Help", href: "/services/scholarship-assistance", icon: Star, color: "text-green-500" },
-              ].map(({ label, href, icon: Icon, color }) => (
-                <Link key={href} href={href} className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#1a3c8f] py-1.5 group">
-                  <Icon className={`w-4 h-4 ${color}`} />{label}
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#1a3c8f] ml-auto" />
-                </Link>
-              ))}
+          {/* AI Tools Banner Card */}
+          <Link href="/dashboard/ai-tools"
+            className="block bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-[#1a3c8f]/20 hover:border-[#1a3c8f] rounded-2xl p-4 transition-all group">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 bg-gradient-to-br from-[#0d1b4b] to-[#1a3c8f] rounded-xl flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-sm group-hover:text-[#1a3c8f]">AI Tools Hub</p>
+                <p className="text-xs text-gray-500">9 tools available</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#1a3c8f] ml-auto" />
             </div>
-          </div>
+            <p className="text-xs text-gray-500">CV Analyzer · Essay Helper · Skills Assessment · Portfolio · and more</p>
+          </Link>
         </div>
 
         {/* Main Content */}

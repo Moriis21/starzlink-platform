@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User, Briefcase, Award, Link2, Eye, Save, Plus, Trash2, Loader2, ExternalLink, CheckCircle, Globe, Code2 } from "lucide-react";
+import AIToolNav from "@/components/ui/AIToolNav";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -106,6 +107,9 @@ export default function PortfolioBuilderPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <AIToolNav currentLabel="Portfolio Builder" />
+      </div>
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-10 px-4 text-white">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>

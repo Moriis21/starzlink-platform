@@ -5,27 +5,51 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Briefcase, GraduationCap, BookOpen, Bookmark,
+  LayoutDashboard, Briefcase, GraduationCap, Bookmark,
   Users, Bell, User, LogOut, Sparkles, ChevronRight,
-  FileText, Mic, Mail, Link2, Grid3x3, Settings
+  Settings, Trophy, Globe, Cpu
 } from "lucide-react";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Career Tools", href: "/dashboard/tools", icon: Grid3x3 },
-  { label: "AI Career Assistant", href: "/dashboard/career", icon: Sparkles },
-  { label: "CV Builder", href: "/dashboard/career/upload", icon: FileText },
-  { label: "Interview Prep", href: "/dashboard/career/interview", icon: Mic },
-  { label: "Cover Letter", href: "/dashboard/career/letter", icon: Mail },
-  { label: "LinkedIn Optimizer", href: "/dashboard/career/linkedin", icon: Link2 },
-  { label: "Saved Items", href: "/dashboard/saved", icon: Bookmark },
-  { label: "Opportunities", href: "/opportunities", icon: Briefcase },
-  { label: "Scholarships", href: "/opportunities/scholarships", icon: GraduationCap },
-  { label: "Trainings", href: "/trainings", icon: BookOpen },
-  { label: "Referrals", href: "/referrals", icon: Users },
-  { label: "Notifications", href: "/notifications", icon: Bell },
-  { label: "Profile Settings", href: "/dashboard/settings/profile", icon: User },
-  { label: "Account Settings", href: "/dashboard/settings/account", icon: Settings },
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  badge?: string;
+}
+
+const NAV_GROUPS: { heading?: string; items: NavItem[] }[] = [
+  {
+    items: [
+      { label: "Dashboard Home", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      { label: "AI Tools",       href: "/dashboard/ai-tools", icon: Cpu },
+    ],
+  },
+  {
+    heading: "Opportunities",
+    items: [
+      { label: "Browse Opportunities", href: "/opportunities", icon: Briefcase },
+      { label: "Scholarships",         href: "/opportunities/scholarships", icon: GraduationCap },
+      { label: "Saved Items",          href: "/dashboard/saved", icon: Bookmark },
+      { label: "Recommendations",      href: "/recommendations", icon: Sparkles },
+    ],
+  },
+  {
+    heading: "My Profile",
+    items: [
+      { label: "Portfolio",        href: "/tools/portfolio-builder", icon: Globe },
+      { label: "Skills & Badges",  href: "/tools/skills-assessment", icon: Trophy },
+      { label: "Referrals",        href: "/referrals", icon: Users },
+      { label: "Notifications",    href: "/notifications", icon: Bell },
+    ],
+  },
+  {
+    heading: "Settings",
+    items: [
+      { label: "Profile Settings", href: "/dashboard/settings/profile", icon: User },
+      { label: "Account Settings", href: "/dashboard/settings/account", icon: Settings },
+    ],
+  },
 ];
 
 interface Props {
@@ -36,9 +60,20 @@ export default function DashboardSidebar({ className }: Props) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const isActive = (item: typeof NAV_ITEMS[0]) => {
+  const isActive = (item: NavItem) => {
     if (item.exact) return pathname === item.href;
     return pathname === item.href || pathname.startsWith(item.href + "/");
+  };
+
+  // Special: AI Tools is active for all /dashboard/ai-tools/* AND /dashboard/career/* AND /tools/*
+  const isAIToolsActive = (item: NavItem) => {
+    if (item.href !== "/dashboard/ai-tools") return isActive(item);
+    return (
+      pathname === "/dashboard/ai-tools" ||
+      pathname.startsWith("/dashboard/ai-tools/") ||
+      pathname.startsWith("/dashboard/career") ||
+      (pathname.startsWith("/tools/") && !pathname.startsWith("/tools/cv-builder") && !pathname.startsWith("/tools/scholarship-calculator"))
+    );
   };
 
   return (
@@ -60,26 +95,45 @@ export default function DashboardSidebar({ className }: Props) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
-          const active = isActive(item);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors group",
-                active
-                  ? "bg-[#1a3c8f] text-white"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-[#1a3c8f]"
-              )}
-            >
-              <item.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-white" : "text-gray-400 group-hover:text-[#1a3c8f]")} />
-              <span className="truncate">{item.label}</span>
-              {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-white/60" />}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {NAV_GROUPS.map((group, gi) => (
+          <div key={gi}>
+            {group.heading && (
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 mb-1">
+                {group.heading}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isAIToolsActive(item);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors group",
+                      active
+                        ? "bg-[#1a3c8f] text-white"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-[#1a3c8f]"
+                    )}
+                  >
+                    <item.icon className={cn(
+                      "w-4 h-4 flex-shrink-0",
+                      active ? "text-white" : "text-gray-400 group-hover:text-[#1a3c8f]"
+                    )} />
+                    <span className="truncate flex-1">{item.label}</span>
+                    {item.badge && (
+                      <span className="text-[10px] font-bold bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                    {active && <ChevronRight className="w-3.5 h-3.5 ml-auto text-white/60 flex-shrink-0" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Logout */}

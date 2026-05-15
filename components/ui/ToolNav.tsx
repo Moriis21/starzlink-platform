@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  Sparkles, FileText, Mic, Mail, Link2, ArrowLeft
+  Sparkles, FileText, Mic, Mail, Link2, ArrowLeft, Cpu, ChevronRight
 } from "lucide-react";
 
 const TOOLS = [
@@ -47,39 +47,58 @@ const NEXT_STEPS: Record<string, { label: string; href: string; desc: string }[]
 interface Props {
   backHref?: string;
   backLabel?: string;
+  /** Current tool label for breadcrumb */
+  currentLabel?: string;
 }
 
-export function ToolNavBar({ backHref = "/dashboard/career", backLabel = "Career Hub" }: Props) {
+export function ToolNavBar({ backHref = "/dashboard/career", backLabel = "Career Hub", currentLabel }: Props) {
   const pathname = usePathname();
 
+  // Derive current label from path if not provided
+  const label = currentLabel ?? TOOLS.find(t => pathname === t.href || pathname.startsWith(t.href + "/"))?.label ?? "Career Tool";
+
   return (
-    <div className="flex items-center gap-2 mb-5 flex-wrap">
-      <Link
-        href={backHref}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a3c8f] bg-white border border-gray-200 px-3 py-1.5 rounded-xl transition-colors flex-shrink-0"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> {backLabel}
-      </Link>
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-1">
-        {TOOLS.map(tool => {
-          const active = pathname === tool.href || pathname.startsWith(tool.href + "/");
-          return (
-            <Link
-              key={tool.href}
-              href={tool.href}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0",
-                active
-                  ? "bg-[#1a3c8f] text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:border-[#1a3c8f] hover:text-[#1a3c8f]"
-              )}
-            >
-              <tool.icon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{tool.label}</span>
-              <span className="sm:hidden">{tool.short}</span>
-            </Link>
-          );
-        })}
+    <div className="mb-5 space-y-2">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1 text-sm text-gray-500 flex-wrap">
+        <Link href="/dashboard" className="hover:text-[#1a3c8f] font-medium">Dashboard</Link>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+        <Link href="/dashboard/ai-tools" className="hover:text-[#1a3c8f] font-medium flex items-center gap-1">
+          <Cpu className="w-3.5 h-3.5" />AI Tools
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+        <span className="text-gray-800 font-semibold">{label}</span>
+      </nav>
+
+      {/* Tool bar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Link
+          href="/dashboard/ai-tools"
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-[#1a3c8f] bg-white border border-gray-200 px-3 py-1.5 rounded-xl transition-colors flex-shrink-0"
+        >
+          <Cpu className="w-3.5 h-3.5" /> AI Tools
+        </Link>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-1">
+          {TOOLS.map(tool => {
+            const active = pathname === tool.href || pathname.startsWith(tool.href + "/");
+            return (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0",
+                  active
+                    ? "bg-[#1a3c8f] text-white"
+                    : "bg-white border border-gray-200 text-gray-600 hover:border-[#1a3c8f] hover:text-[#1a3c8f]"
+                )}
+              >
+                <tool.icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{tool.label}</span>
+                <span className="sm:hidden">{tool.short}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

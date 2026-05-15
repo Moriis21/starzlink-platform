@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Sparkles, Download, Save, RefreshCw, Sliders, FileText, ChevronDown, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import AIToolNav from "@/components/ui/AIToolNav";
 
 const ESSAY_TYPES = [
   { value: "scholarship_essay", label: "Scholarship Essay" },
@@ -66,6 +67,11 @@ export default function EssayHelperPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Nav */}
+      <div className="max-w-4xl mx-auto px-4 pt-6">
+        <AIToolNav currentLabel="Essay Helper" />
+      </div>
+
       {/* Hero */}
       <div className="bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] py-12 px-4">
         <div className="max-w-4xl mx-auto text-center text-white">
