@@ -431,17 +431,31 @@ export const submissionsApi = {
 
 export const adminApi = {
   getStats: async () => {
-    const [jobs, scholarships, trainings, campusUpdates, users, messages, newsletter, submissions] =
+    // NOTE: do NOT use .limit(1) on count queries — it caps the count at 1.
+    // NOTE: do NOT count profiles directly — RLS limits to current user's row = always 1.
+    // User count must come from the auth admin API which bypasses RLS entirely.
+
+    const [jobs, scholarships, trainings, campusUpdates, messages, newsletter, submissions] =
       await Promise.all([
-        insforge.database.from("jobs").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("scholarships").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("trainings").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("campus_updates").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("profiles").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("messages").select("id", { count: "exact" }).eq("status", "unread").limit(1),
-        insforge.database.from("newsletter_subscribers").select("id", { count: "exact" }).limit(1),
-        insforge.database.from("submissions").select("id", { count: "exact" }).eq("status", "pending").limit(1),
+        insforge.database.from("jobs").select("id", { count: "exact", head: true }),
+        insforge.database.from("scholarships").select("id", { count: "exact", head: true }),
+        insforge.database.from("trainings").select("id", { count: "exact", head: true }),
+        insforge.database.from("campus_updates").select("id", { count: "exact", head: true }),
+        insforge.database.from("messages").select("id", { count: "exact", head: true }).eq("status", "unread"),
+        insforge.database.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
+        insforge.database.from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
       ]);
+
+    // Get real user count from auth admin API (bypasses profiles RLS)
+    let totalUsers = 0;
+    try {
+      const res = await fetch("/api/admin/users?limit=1000");
+      if (res.ok) {
+        const data = await res.json();
+        // Use total from API, fall back to users array length
+        totalUsers = data.total > 0 ? data.total : (data.users?.length ?? 0);
+      }
+    } catch {}
 
     return {
       data: {
@@ -450,7 +464,7 @@ export const adminApi = {
           total_scholarships: scholarships.count ?? 0,
           total_trainings: trainings.count ?? 0,
           total_campus_updates: campusUpdates.count ?? 0,
-          total_users: users.count ?? 0,
+          total_users: totalUsers,
           unread_messages: messages.count ?? 0,
           newsletter_subscribers: newsletter.count ?? 0,
           pending_submissions: submissions.count ?? 0,

@@ -72,7 +72,8 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
           );
         }
 
-        const total = json.total ?? json.count ?? merged.length;
+        // Use || not ?? so a zero total from InsForge falls back to actual array length
+        const total = (json.total || json.count) || merged.length;
         return { users: merged, total };
       }
     }
