@@ -56,7 +56,6 @@ const menuItems = [
     children: [
       { label: "Scholarship Assistance", href: "/admin/scholarship-assistance" },
       { label: "Reviews & Reports", href: "/admin/opportunity-reviews" },
-      { label: "WhatsApp Logs", href: "/admin/whatsapp-logs" },
     ]
   },
   { label: "Reports", href: "/admin/reports", icon: ClipboardList },
