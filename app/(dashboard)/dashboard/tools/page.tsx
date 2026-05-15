@@ -78,7 +78,7 @@ const TOOLS = [
   {
     title: "Saved Opportunities",
     desc: "Browse all the jobs, scholarships, and trainings you have saved for later.",
-    href: "/dashboard",
+    href: "/dashboard/saved",
     icon: Bookmark,
     color: "from-yellow-500 to-amber-600",
     textColor: "text-yellow-600",

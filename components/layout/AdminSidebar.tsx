@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
   Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
-  Calendar, Trophy, Gift, Crown, CreditCard, Star
+  Calendar, Trophy, Gift, Crown, CreditCard, Star, Archive
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -49,6 +49,7 @@ const menuItems = [
   { label: "Redemptions", href: "/admin/redemptions", icon: Gift },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Reports", href: "/admin/reports", icon: TrendingUp },
+  { label: "Expired Content", href: "/admin/expired-content", icon: Archive },
   { label: "Activity Logs", href: "/admin/activity-logs", icon: ClipboardList },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
