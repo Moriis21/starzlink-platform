@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Briefcase, GraduationCap, BookOpen, Bookmark,
   Users, Bell, User, LogOut, Sparkles, ChevronRight,
-  FileText, Mic, Mail, Link2, Grid3x3
+  FileText, Mic, Mail, Link2, Grid3x3, Settings
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -25,6 +25,7 @@ const NAV_ITEMS = [
   { label: "Referrals", href: "/referrals", icon: Users },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Profile", href: "/profile", icon: User },
+  { label: "Account Settings", href: "/dashboard/settings/account", icon: Settings },
 ];
 
 interface Props {

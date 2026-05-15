@@ -12,15 +12,19 @@ import {
   CheckCircle,
   ExternalLink,
   Upload,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { ToolNavBar, NextSteps } from "@/components/ui/ToolNav";
+import toast from "react-hot-toast";
 
 export default function HistoryPage() {
   const { user } = useAuth();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -62,6 +66,24 @@ export default function HistoryPage() {
 
     fetchHistory();
   }, [user?.id]);
+
+  const handleDeleteCV = async (upload: any) => {
+    try {
+      setDeletingId(upload.id);
+      const res = await fetch("/api/career/cv/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadId: upload.id, userId: user?.id }),
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      toast.success("CV and analysis history deleted.");
+      setRecords((prev: any[]) => prev.filter((u: any) => u.id !== upload.id));
+      setConfirmDelete(null);
+    } catch {
+      toast.error("Failed to delete CV.");
+    }
+    setDeletingId(null);
+  };
 
   const scoreColor = (s: number) =>
     s >= 70 ? "text-green-600 bg-green-100" : s >= 50 ? "text-orange-600 bg-orange-100" : "text-red-600 bg-red-100";
@@ -165,16 +187,32 @@ export default function HistoryPage() {
                     >
                       View <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
+                    <button
+                      onClick={() => setConfirmDelete(record)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete CV"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
 
                 {!record.analysis && record.status !== "analyzed" && (
-                  <Link
-                    href="/dashboard/career/upload"
-                    className="text-sm text-gray-400 hover:text-[#1a3c8f] font-medium"
-                  >
-                    Re-analyze →
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href="/dashboard/career/upload"
+                      className="text-sm text-gray-400 hover:text-[#1a3c8f] font-medium"
+                    >
+                      Re-analyze →
+                    </Link>
+                    <button
+                      onClick={() => setConfirmDelete(record)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete CV"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 )}
               </div>
             </motion.div>
@@ -182,6 +220,33 @@ export default function HistoryPage() {
         </div>
       )}
       <NextSteps />
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6 text-red-500" />
+            </div>
+            <h2 className="text-lg font-extrabold text-gray-900 text-center mb-2">Delete CV?</h2>
+            <p className="text-sm text-gray-500 text-center mb-1">
+              <strong>{confirmDelete.file_name}</strong>
+            </p>
+            <p className="text-xs text-gray-400 text-center mb-5">
+              This will permanently delete this CV and all its analysis history. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 border border-gray-200 text-gray-600 font-medium py-3 rounded-xl hover:bg-gray-50 text-sm">
+                Cancel
+              </button>
+              <button onClick={() => handleDeleteCV(confirmDelete)} disabled={deletingId === confirmDelete.id}
+                className="flex-1 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 disabled:opacity-60 text-sm">
+                {deletingId === confirmDelete.id ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

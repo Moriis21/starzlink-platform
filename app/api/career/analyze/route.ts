@@ -39,6 +39,19 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
+    // Look up previous analysis for this user
+    const { data: prevAnalysis } = await insforge.database
+      .from("cv_analysis")
+      .select("overall_score, ats_score, weak_areas, missing_keywords, formatting_issues")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const prevScore = (prevAnalysis as any)?.overall_score ?? null;
+    const prevAtsScore = (prevAnalysis as any)?.ats_score ?? null;
+    const prevWeakAreas: string[] = (prevAnalysis as any)?.weak_areas ?? [];
+
     // ── Credit check (skip if Pro) ──────────────────────────────────────────
     const now = new Date().toISOString();
 
@@ -71,6 +84,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Get version number
+    const { count: versionCount } = await insforge.database
+      .from("cv_uploads")
+      .select("id", { count: "exact" })
+      .eq("user_id", userId)
+      .limit(1);
+    const cvVersion = (versionCount ?? 0) + 1;
+
     // Save upload record to InsForge
     const { data: uploadData, error: uploadError } = await insforge.database
       .from("cv_uploads")
@@ -81,6 +102,7 @@ export async function POST(req: NextRequest) {
         file_url: fileUrl || "",
         extracted_text: extractedText,
         status: "processing",
+        cv_version: cvVersion,
       }])
       .select("id")
       .single();
@@ -103,32 +125,68 @@ export async function POST(req: NextRequest) {
     const cvText = extractedText.slice(0, 8000);
 
     // Call Groq for CV analysis
-    const systemPrompt = `You are an expert CV/Resume analyst and career coach. Analyze the provided CV and return a detailed JSON analysis.
+    const isReUpload = prevScore !== null;
 
-IMPORTANT OUTPUT RULES:
-- Return ONLY valid JSON, no markdown, no text outside the JSON
-- In string values, do NOT use: *, **, #, ##, ###, _, __, backticks
-- Keep all text plain and professional
+    const systemPrompt = `You are an expert CV/Resume analyst and career coach. Your job is to produce accurate, specific, and UNIQUE analysis of the CV provided — never produce identical feedback for different documents.
 
-Return ONLY a valid JSON object with exactly these fields (no markdown, no extra text):
+CRITICAL RULES:
+- Return ONLY valid JSON, no markdown, no text outside JSON
+- NEVER use: *, **, #, ##, ###, _, __, backticks in string values
+- Each analysis MUST be specific to the actual content provided
+- NEVER copy or repeat the previous weaknesses if they have been fixed
+- Scores MUST change if the CV content has improved or degraded
+- Minimum score variation: if this is a different/improved CV, the score must reflect it
+${isReUpload ? `
+PREVIOUS ANALYSIS CONTEXT:
+- Previous Overall Score: ${prevScore}/100
+- Previous ATS Score: ${prevAtsScore}/100
+- Previous Weak Areas: ${prevWeakAreas.slice(0, 5).join("; ")}
+
+Compare the new CV against this baseline. If improvements are detected, INCREASE the scores accordingly. Only list a weakness if it STILL EXISTS in the new CV. Add an "improvement_summary" showing what changed.
+` : ""}
+
+Return ONLY a valid JSON object with exactly these fields:
 {
-  "overall_score": <integer 0-100>,
-  "ats_score": <integer 0-100>,
-  "strengths": [<string>, ...],
-  "weak_areas": [<string>, ...],
-  "missing_keywords": [<string>, ...],
-  "formatting_issues": [<string>, ...],
-  "grammar_issues": [<string>, ...],
+  "overall_score": <integer 0-100, must accurately reflect this specific CV quality>,
+  "ats_score": <integer 0-100, based on actual keyword density and ATS compatibility>,
+  "cv_type": "<one of: student, graduate, professional, executive, technical, creative>",
+  "experience_level": "<one of: entry, mid, senior, executive>",
+  "strengths": [<3-6 specific strengths found in THIS CV>],
+  "weak_areas": [<3-6 genuine weaknesses STILL present in this CV — empty if none>],
+  "missing_keywords": [<5-10 industry keywords absent from THIS CV>],
+  "formatting_issues": [<specific formatting problems found>],
+  "grammar_issues": [<specific grammar or language problems found>],
   "section_review": {
-    "summary": "<brief review of professional summary/objective section>",
-    "experience": "<brief review of work experience section>",
-    "education": "<brief review of education section>",
-    "skills": "<brief review of skills section>",
+    "summary": "<specific review of this CV's summary/objective>",
+    "experience": "<specific review of this CV's experience section>",
+    "education": "<specific review of this CV's education section>",
+    "skills": "<specific review of this CV's skills section>",
     "other": "<review of any other sections>"
   },
-  "recommended_job_titles": [<string>, ...],
-  "career_advice": "<2-3 sentences of personalized career advice>"
+  "recommended_job_titles": [<5-8 job titles matching this specific person's background>],
+  "career_advice": "<2-3 sentences of personalized advice based on THIS person's actual background>",
+  "score_breakdown": {
+    "formatting": <0-20>,
+    "keywords": <0-20>,
+    "achievements": <0-20>,
+    "readability": <0-20>,
+    "ats_compatibility": <0-20>
+  }${isReUpload ? `,
+  "improvement_summary": {
+    "previous_score": ${prevScore},
+    "new_score": <same as overall_score>,
+    "score_change": <new_score minus ${prevScore}>,
+    "improvements_detected": [<list what actually improved from the previous version>],
+    "still_needs_work": [<weaknesses that remain unfixed>],
+    "verdict": "<one sentence summary of overall improvement or regression>"
+  }` : ""}
 }`;
+
+    const userMessage = `Analyze this CV carefully and produce scoring based on its ACTUAL content quality:
+
+${cvText}
+
+${isReUpload ? `NOTE: This appears to be an updated/improved version of a previously analyzed CV. Compare against the previous analysis baseline provided in the system prompt and detect real changes.` : "NOTE: This is a fresh CV analysis. Produce honest, specific feedback based on what you actually find in the document."}`;
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -140,9 +198,9 @@ Return ONLY a valid JSON object with exactly these fields (no markdown, no extra
         model: GROQ_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Analyze this CV:\n\n${cvText}` },
+          { role: "user", content: userMessage },
         ],
-        temperature: 0.2,
+        temperature: 0.35,
         max_tokens: 2000,
         stream: false,
       }),
@@ -208,6 +266,10 @@ Return ONLY a valid JSON object with exactly these fields (no markdown, no extra
         recommended_job_titles: analysis.recommended_job_titles ?? [],
         career_advice: analysis.career_advice ?? "",
         raw_response: rawResponse,
+        improvement_summary: analysis.improvement_summary ?? null,
+        score_breakdown: analysis.score_breakdown ?? null,
+        cv_type: analysis.cv_type ?? "professional",
+        experience_level: analysis.experience_level ?? "mid",
       }])
       .select("id")
       .single();
@@ -247,6 +309,8 @@ Return ONLY a valid JSON object with exactly these fields (no markdown, no extra
       uploadId,
       analysisId: (analysisData as any).id,
       analysis,
+      isReUpload,
+      previousScore: prevScore,
     });
   } catch (err: any) {
     console.error("Analyze API error:", err);
