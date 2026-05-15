@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 import FloatingDashboardButton from "@/components/ui/FloatingDashboardButton";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 import { useAuth } from "@/context/AuthContext";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -15,6 +16,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <Footer />
       {user && <MobileBottomNav />}
       <FloatingDashboardButton />
+      <PWAInstallPrompt />
     </div>
   );
 }
