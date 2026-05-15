@@ -56,16 +56,20 @@ export default function AuthCallbackPage() {
             updated_at: new Date().toISOString(),
           }], { onConflict: "id" });
 
-          await insforge.database.from("user_credits").upsert([{
-            user_id: authUser.id, credits_balance: 5, credits_used: 0,
-          }], { onConflict: "user_id" }).catch(() => {});
+          try {
+            await insforge.database.from("user_credits").upsert([{
+              user_id: authUser.id, credits_balance: 5, credits_used: 0,
+            }], { onConflict: "user_id" });
+          } catch {}
 
-          await insforge.database.from("credit_transactions").insert([{
-            user_id: authUser.id,
-            transaction_type: "free_signup_credit",
-            credits_amount: 5,
-            reason: "Welcome! 5 free credits for your first CV analysis.",
-          }]).catch(() => {});
+          try {
+            await insforge.database.from("credit_transactions").insert([{
+              user_id: authUser.id,
+              transaction_type: "free_signup_credit",
+              credits_amount: 5,
+              reason: "Welcome! 5 free credits for your first CV analysis.",
+            }]);
+          } catch {}
         }
 
         router.replace("/dashboard");
