@@ -186,14 +186,14 @@ export default function JobDetailPage() {
                 <ShareButtons title={job.title} description={job.description} />
               </div>
 
-              <a
-                href={job.application_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a3c8f] text-white font-bold rounded-xl hover:bg-blue-900 transition-colors mb-3"
-              >
-                Apply Now <ExternalLink className="w-4 h-4" />
-              </a>
+              {job.application_link && (
+                <Link
+                  href={`/viewer?url=${encodeURIComponent(job.application_link)}&title=${encodeURIComponent(job.title)}&back=${encodeURIComponent(`/opportunities/jobs/${job.id}`)}&type=job`}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a3c8f] text-white font-bold rounded-xl hover:bg-blue-900 transition-colors mb-3"
+                >
+                  Apply Now <ExternalLink className="w-4 h-4" />
+                </Link>
+              )}
 
               <div className="flex gap-2">
                 <button

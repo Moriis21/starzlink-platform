@@ -88,9 +88,13 @@ export default function ScholarshipDetailPage() {
               <div className="mb-3">
                 <ShareButtons title={item.title} description={item.description} />
               </div>
-              <a href={item.application_link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a3c8f] text-white font-bold rounded-xl hover:bg-blue-900 mb-3">
-                Apply Now <ExternalLink className="w-4 h-4" />
-              </a>
+              {item.application_link && (
+                <Link
+                  href={`/viewer?url=${encodeURIComponent(item.application_link)}&title=${encodeURIComponent(item.title)}&back=${encodeURIComponent(`/opportunities/scholarships/${item.id}`)}&type=scholarship`}
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-[#1a3c8f] text-white font-bold rounded-xl hover:bg-blue-900 mb-3">
+                  Apply Now <ExternalLink className="w-4 h-4" />
+                </Link>
+              )}
               <div className="flex gap-2">
                 <button onClick={() => { setSaved(!saved); toast.success(saved ? "Removed" : "Saved!"); }} className={cn("flex-1 flex items-center justify-center gap-1.5 py-2.5 border rounded-xl text-sm font-medium", saved ? "bg-blue-50 border-[#1a3c8f] text-[#1a3c8f]" : "border-gray-200 text-gray-600")}>
                   <Bookmark className="w-4 h-4" fill={saved ? "currentColor" : "none"} />{saved ? "Saved" : "Save"}
