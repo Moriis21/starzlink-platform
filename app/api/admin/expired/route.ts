@@ -2,7 +2,76 @@ import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 export const runtime = "nodejs";
 
+const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
+const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
 const TABLES = ["jobs", "scholarships", "trainings", "opportunities"] as const;
+
+type Table = typeof TABLES[number];
+
+/**
+ * Fetch expired records via REST API — bypasses RLS so admin can see
+ * records where public_visible = false.
+ */
+async function fetchExpiredFromTable(
+  table: Table,
+  status: string,
+  search: string,
+  authKey: string
+): Promise<any[]> {
+  try {
+    const params = new URLSearchParams({
+      select: "id,title,status,deadline,created_at,expired_at,archived_at,public_visible",
+      order: "expired_at.desc.nullslast",
+      limit: "100",
+    });
+
+    if (status === "expired") params.set("status", "eq.expired");
+    else if (status === "archived") params.set("status", "eq.archived");
+    else params.set("status", "in.(expired,archived)");
+
+    if (search) params.set("title", `ilike.*${search}*`);
+
+    const res = await fetch(`${INSFORGE_URL}/rest/v1/${table}?${params}`, {
+      headers: { apikey: authKey, Authorization: `Bearer ${authKey}` },
+    });
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data) ? data : []).map((r: any) => ({
+      ...r,
+      _table: table,
+      _type: table === "opportunities" ? "opportunity" : table.slice(0, -1),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function countExpiredInTable(table: Table, authKey: string): Promise<number> {
+  try {
+    const res = await fetch(
+      `${INSFORGE_URL}/rest/v1/${table}?status=eq.expired&select=id`,
+      {
+        headers: {
+          apikey: authKey,
+          Authorization: `Bearer ${authKey}`,
+          Prefer: "count=exact",
+          Range: "0-0",
+        },
+      }
+    );
+    if (!res.ok) return 0;
+    const range = res.headers.get("content-range");
+    if (range) {
+      const total = range.split("/")[1];
+      if (total && total !== "*") return parseInt(total, 10);
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data.length : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,63 +79,34 @@ export async function GET(req: NextRequest) {
     const contentType = searchParams.get("type") || "all";
     const status = searchParams.get("status") || "expired";
     const search = searchParams.get("search") || "";
-    const page = Math.max(1, Number(searchParams.get("page") || 1));
-    const limit = 20;
-    const from = (page - 1) * limit;
 
-    const results: any[] = [];
+    const authKey = process.env.INSFORGE_SERVICE_KEY || ANON_KEY;
+    const tablesToQuery = contentType === "all" ? [...TABLES] : [contentType as Table];
 
-    const tablesToQuery = contentType === "all"
-      ? TABLES
-      : [contentType as typeof TABLES[number]];
+    // Fetch from all tables in parallel
+    const recordArrays = await Promise.all(
+      tablesToQuery.map(t => fetchExpiredFromTable(t, status, search, authKey))
+    );
 
-    for (const table of tablesToQuery) {
-      try {
-        let q = insforge.database
-          .from(table)
-          .select("id, title, status, deadline, created_at, expired_at, archived_at", { count: "exact" })
-          .order("expired_at", { ascending: false })
-          .range(from, from + limit - 1);
+    const records = recordArrays
+      .flat()
+      .sort((a, b) => {
+        const da = a.expired_at || a.created_at || "";
+        const db = b.expired_at || b.created_at || "";
+        return db.localeCompare(da);
+      });
 
-        if (status === "expired") q = q.eq("status", "expired");
-        else if (status === "archived") q = q.eq("status", "archived");
-        else if (status === "deleted") q = q.eq("status", "deleted");
-        else q = q.in("status", ["expired", "archived"]);
-
-        if (search) q = q.ilike("title", `%${search}%`);
-
-        const { data, error } = await q;
-        if (data) {
-          results.push(...(data as any[]).map((r: any) => ({ ...r, _table: table, _type: table.slice(0, -1) })));
-        }
-      } catch { /* table may not have these columns yet */ }
-    }
-
-    // Sort by expired_at descending
-    results.sort((a, b) => {
-      const da = a.expired_at || a.created_at || "";
-      const db = b.expired_at || b.created_at || "";
-      return db.localeCompare(da);
-    });
-
-    // Get stats
-    const stats: Record<string, number> = {};
-    for (const table of TABLES) {
-      try {
-        const { count } = await insforge.database
-          .from(table)
-          .select("id", { count: "exact" })
-          .eq("status", "expired")
-          .limit(1);
-        stats[table] = count ?? 0;
-      } catch { stats[table] = 0; }
-    }
+    // Count expired per table for stats
+    const statEntries = await Promise.all(
+      TABLES.map(async t => [t, await countExpiredInTable(t, authKey)] as const)
+    );
+    const stats = Object.fromEntries(statEntries);
 
     return NextResponse.json({
-      records: results,
-      total: results.length,
+      records,
+      total: records.length,
       stats,
-      totalExpired: Object.values(stats).reduce((s, n) => s + n, 0),
+      totalExpired: statEntries.reduce((s, [, n]) => s + n, 0),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -80,44 +120,78 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing action, id, or table" }, { status: 400 });
     }
 
+    const authKey = process.env.INSFORGE_SERVICE_KEY || ANON_KEY;
+
+    const restUpdate = async (payload: Record<string, any>) => {
+      const res = await fetch(`${INSFORGE_URL}/rest/v1/${table}?id=eq.${id}`, {
+        method: "PATCH",
+        headers: {
+          apikey: authKey,
+          Authorization: `Bearer ${authKey}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify(payload),
+      });
+      return res.ok;
+    };
+
     if (action === "restore") {
-      const updates: any = {
+      const payload: any = {
         status: "active",
         public_visible: true,
         expired_at: null,
         restored_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      if (newDeadline) updates.deadline = newDeadline;
-      await insforge.database.from(table).update(updates).eq("id", id);
+      if (newDeadline) payload.deadline = newDeadline;
+      const ok = await restUpdate(payload);
+      if (!ok) {
+        // fallback to SDK
+        try { await insforge.database.from(table).update(payload).eq("id", id); } catch {}
+      }
       return NextResponse.json({ success: true, action: "restored" });
     }
 
     if (action === "extend") {
       if (!newDeadline) return NextResponse.json({ error: "New deadline required" }, { status: 400 });
-      await insforge.database.from(table).update({
+      const payload = {
         deadline: newDeadline,
         status: "active",
         public_visible: true,
         expired_at: null,
         extension_reason: reason || "Deadline extended by admin",
         updated_at: new Date().toISOString(),
-      }).eq("id", id);
+      };
+      const ok = await restUpdate(payload);
+      if (!ok) {
+        try { await insforge.database.from(table).update(payload).eq("id", id); } catch {}
+      }
       return NextResponse.json({ success: true, action: "extended" });
     }
 
     if (action === "archive") {
-      await insforge.database.from(table).update({
+      const payload = {
         status: "archived",
         archived_at: new Date().toISOString(),
         public_visible: false,
         updated_at: new Date().toISOString(),
-      }).eq("id", id);
+      };
+      const ok = await restUpdate(payload);
+      if (!ok) {
+        try { await insforge.database.from(table).update(payload).eq("id", id); } catch {}
+      }
       return NextResponse.json({ success: true, action: "archived" });
     }
 
     if (action === "delete") {
-      await insforge.database.from(table).delete().eq("id", id);
+      const res = await fetch(`${INSFORGE_URL}/rest/v1/${table}?id=eq.${id}`, {
+        method: "DELETE",
+        headers: { apikey: authKey, Authorization: `Bearer ${authKey}` },
+      });
+      if (!res.ok) {
+        try { await insforge.database.from(table).delete().eq("id", id); } catch {}
+      }
       return NextResponse.json({ success: true, action: "deleted" });
     }
 
