@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { settingsApi } from "@/lib/api";
-import { Save, Globe, MessageCircle, Mail, Link as LinkIcon } from "lucide-react";
+import { Save, Globe, MessageCircle, Link as LinkIcon, CreditCard, CheckCircle2, ShieldAlert } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function AdminSettingsPage() {
@@ -22,7 +22,24 @@ export default function AdminSettingsPage() {
   });
   const [loading, setLoading] = useState(false);
 
+  // ── Stripe keys (managed via a dedicated server route — values are never
+  //    loaded into the browser; we only learn whether each key is configured) ──
+  const [stripe, setStripe] = useState({ secretKey: "", webhookSecret: "" });
+  const [stripeStatus, setStripeStatus] = useState({
+    hasSecretKey: false, hasWebhookSecret: false, secretFromEnv: false, webhookFromEnv: false,
+  });
+  const [stripeSaving, setStripeSaving] = useState(false);
+
   const set = (k: string, v: string) => setSettings(s => ({ ...s, [k]: v }));
+
+  const loadStripeStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/stripe-keys");
+      if (res.ok) setStripeStatus(await res.json());
+    } catch { /* non-blocking */ }
+  };
+
+  useEffect(() => { loadStripeStatus(); }, []);
 
   const handleSave = async () => {
     setLoading(true);
@@ -31,6 +48,30 @@ export default function AdminSettingsPage() {
       toast.success("Settings saved successfully!");
     } catch { toast.error("Failed to save settings."); }
     setLoading(false);
+  };
+
+  const handleSaveStripe = async () => {
+    if (!stripe.secretKey.trim() && !stripe.webhookSecret.trim()) {
+      toast.error("Enter a key to save.");
+      return;
+    }
+    setStripeSaving(true);
+    try {
+      const res = await fetch("/api/admin/stripe-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(stripe),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Failed to save Stripe keys."); return; }
+      toast.success("Stripe keys saved.");
+      setStripe({ secretKey: "", webhookSecret: "" }); // clear the inputs after saving
+      loadStripeStatus();
+    } catch {
+      toast.error("Could not save Stripe keys.");
+    } finally {
+      setStripeSaving(false);
+    }
   };
 
   return (
@@ -104,6 +145,71 @@ export default function AdminSettingsPage() {
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1.5">Google Analytics ID</label>
               <input value={settings.google_analytics_id} onChange={e => set("google_analytics_id", e.target.value)} placeholder="G-XXXXXXXXXX" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1a3c8f]" />
+            </div>
+          </div>
+
+          {/* Payment Gateway (Stripe) */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="w-5 h-5 text-[#635bff]" />
+              <h2 className="font-bold text-gray-900">Payment Gateway (Stripe)</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
+                  Secret Key
+                  {(stripeStatus.hasSecretKey || stripeStatus.secretFromEnv) && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {stripeStatus.secretFromEnv ? "set via env" : "configured"}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={stripe.secretKey}
+                  onChange={e => setStripe(s => ({ ...s, secretKey: e.target.value }))}
+                  placeholder={stripeStatus.hasSecretKey ? "•••••••• (leave blank to keep)" : "sk_live_… or sk_test_…"}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#1a3c8f]"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
+                  Webhook Signing Secret
+                  {(stripeStatus.hasWebhookSecret || stripeStatus.webhookFromEnv) && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {stripeStatus.webhookFromEnv ? "set via env" : "configured"}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={stripe.webhookSecret}
+                  onChange={e => setStripe(s => ({ ...s, webhookSecret: e.target.value }))}
+                  placeholder={stripeStatus.hasWebhookSecret ? "•••••••• (leave blank to keep)" : "whsec_…"}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-[#1a3c8f]"
+                />
+              </div>
+
+              <button
+                onClick={handleSaveStripe}
+                disabled={stripeSaving}
+                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#1a3c8f] text-white rounded-xl text-sm font-medium hover:bg-blue-900 disabled:opacity-60"
+              >
+                <Save className="w-4 h-4" /> {stripeSaving ? "Saving…" : "Save Stripe Keys"}
+              </button>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex gap-2">
+                <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  Keys entered here are stored in the database. For production, prefer setting <code className="font-mono">STRIPE_SECRET_KEY</code> and <code className="font-mono">STRIPE_WEBHOOK_SECRET</code> as environment variables — those take precedence and never touch the database. Webhook endpoint: <code className="font-mono">/api/payments/stripe/webhook</code>.
+                </span>
+              </div>
             </div>
           </div>
         </div>

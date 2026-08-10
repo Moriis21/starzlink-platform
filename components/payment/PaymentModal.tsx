@@ -4,9 +4,9 @@ import { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Smartphone, CreditCard, Building2, CheckCircle2,
+  X, Smartphone, Building2, CheckCircle2,
   Loader2, Copy, Check, ExternalLink, Upload, AlertCircle,
-  Shield, Clock, Star, Wallet, ChevronLeft
+  Shield, Clock, Wallet, ChevronLeft
 } from "lucide-react";
 import { insforge } from "@/lib/insforge";
 import toast from "react-hot-toast";
@@ -60,9 +60,9 @@ const METHOD_CONFIG = {
     icon: "🔵",
   },
   credit_card: {
-    label: "Credit Card",
+    label: "Credit / Debit Card",
     badge: "Powered by Stripe",
-    desc: "Secure · International",
+    desc: "Secure checkout · Instant",
     color: "from-slate-700 to-slate-900",
     bgLight: "bg-slate-50 border-slate-200",
     textColor: "text-slate-700",
@@ -132,13 +132,8 @@ export default function PaymentModal({
   const [step, setStep] = useState<Step>("select_method");
   const [paymentId, setPaymentId] = useState<string | null>(null);
 
-  // Card form state
-  const [cardName, setCardName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardEmail, setCardEmail] = useState("");
-  const [cardLoading, setCardLoading] = useState(false);
+  // Stripe hosted-checkout redirect state
+  const [redirecting, setRedirecting] = useState(false);
 
   // Bank form state
   const [bankRef, setBankRef] = useState("");
@@ -155,7 +150,6 @@ export default function PaymentModal({
   const resetAndClose = () => {
     setStep("select_method");
     setSelectedMethod(null);
-    setCardName(""); setCardNumber(""); setCardExpiry(""); setCardCvc(""); setCardEmail("");
     setBankRef(""); setProofFile(null); setProofPreview(null);
     setPaypalNote("");
     setPaymentId(null);
@@ -192,36 +186,34 @@ export default function PaymentModal({
     }
   }
 
-  // ── Card submit ──────────────────────────────────────────────────────────────
-  async function handleCardSubmit() {
-    if (!cardName || !cardNumber || !cardExpiry || !cardCvc) {
-      toast.error("Please fill in all card details");
-      return;
-    }
-    setCardLoading(true);
-    const last4 = cardNumber.replace(/\s/g, "").slice(-4);
-
-    // Try Stripe intent first
+  // ── Stripe hosted checkout ─────────────────────────────────────────────────────
+  // Redirect to Stripe's secure hosted page. Card data is entered on Stripe, never
+  // in our app, and the actual charge + fulfillment happen via the webhook.
+  async function startStripeCheckout() {
+    if (!user?.id) { toast.error("Please log in to continue."); return; }
+    setRedirecting(true);
     try {
-      const intentRes = await fetch("/api/payments/stripe/intent", {
+      const res = await fetch("/api/payments/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, currency, userId: user?.id }),
+        body: JSON.stringify({
+          userId: user.id,
+          paymentType,
+          itemType,
+          itemId,
+        }),
       });
-      const intentData = await intentRes.json();
-      if (!intentRes.ok) {
-        // Stripe not configured, fall through to manual record
-        toast("Stripe not configured. Recording payment for manual verification.", { icon: "ℹ️" });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        toast.error(data.error || "Could not start card checkout.");
+        setRedirecting(false);
+        return;
       }
+      window.location.href = data.url; // hand off to Stripe
     } catch {
-      // Ignore Stripe errors, create manual record
+      toast.error("Could not reach the payment service.");
+      setRedirecting(false);
     }
-
-    setCardLoading(false);
-    await createPaymentRecord("credit_card", {
-      cardLast4: last4,
-      userNote: `Card payment for ${itemLabel}. Billing email: ${cardEmail}`,
-    });
   }
 
   // ── Bank submit ──────────────────────────────────────────────────────────────
@@ -271,20 +263,9 @@ export default function PaymentModal({
     }
   }
 
-  // ── Format card number ───────────────────────────────────────────────────────
-  function formatCardNumber(val: string) {
-    return val.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
-  }
-
-  function formatExpiry(val: string) {
-    const digits = val.replace(/\D/g, "").slice(0, 4);
-    if (digits.length >= 3) return digits.slice(0, 2) + "/" + digits.slice(2);
-    return digits;
-  }
-
   const handleContinue = () => {
     if (!selectedMethod) return;
-    if (selectedMethod === "credit_card") setStep("card_form");
+    if (selectedMethod === "credit_card") startStripeCheckout();
     else if (selectedMethod === "bank_transfer") setStep("bank_form");
     else setStep("instructions");
   };
@@ -356,10 +337,14 @@ export default function PaymentModal({
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={handleContinue}
-                  disabled={!selectedMethod}
-                  className="w-full bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold py-4 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90"
+                  disabled={!selectedMethod || redirecting}
+                  className="w-full bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold py-4 rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-90 flex items-center justify-center gap-2"
                 >
-                  Continue with {selectedMethod ? METHOD_CONFIG[selectedMethod].label : "…"}
+                  {redirecting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to secure checkout…</>
+                  ) : (
+                    <>Continue with {selectedMethod ? METHOD_CONFIG[selectedMethod].label : "…"}</>
+                  )}
                 </motion.button>
                 <div className="flex items-center justify-center gap-1.5 mt-3 text-xs text-gray-400">
                   <Shield className="w-3.5 h-3.5" />
@@ -619,123 +604,8 @@ export default function PaymentModal({
             </>
           )}
 
-          {/* ── CREDIT CARD ─────────────────────────────────────────────────────── */}
-          {step === "card_form" && (
-            <>
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                <button onClick={() => setStep("select_method")} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <div className="flex-1">
-                  <h2 className="text-lg font-extrabold text-gray-900">Secure Card Payment</h2>
-                  <p className="text-xs text-gray-500">🔒 Secured by Stripe</p>
-                </div>
-                <button onClick={resetAndClose} className="p-2 hover:bg-gray-100 rounded-xl text-gray-400">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="overflow-y-auto flex-1 p-5 space-y-4">
-                {/* Amount */}
-                <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-gray-500">Charging for</p>
-                    <p className="font-bold text-gray-900 text-sm">{itemLabel}</p>
-                  </div>
-                  <p className="text-2xl font-extrabold text-[#1a3c8f]">{amtStr}</p>
-                </div>
-
-                {/* Card form */}
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 block mb-1.5">Cardholder Name</label>
-                    <input
-                      type="text"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      placeholder="John Doe"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1a3c8f] min-h-[48px]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 block mb-1.5">Card Number</label>
-                    <div className="relative">
-                      <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                        placeholder="1234 5678 9012 3456"
-                        className="w-full pl-10 pr-4 border border-gray-200 rounded-xl py-3 text-sm font-mono focus:outline-none focus:border-[#1a3c8f] tracking-wider min-h-[48px]"
-                        maxLength={19}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1.5">Expiry (MM/YY)</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                        placeholder="12/27"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1a3c8f] min-h-[48px]"
-                        maxLength={5}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1.5">CVC</label>
-                      <input
-                        type="password"
-                        inputMode="numeric"
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        placeholder="•••"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1a3c8f] min-h-[48px]"
-                        maxLength={4}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-600 block mb-1.5">Billing Email</label>
-                    <input
-                      type="email"
-                      value={cardEmail}
-                      onChange={(e) => setCardEmail(e.target.value)}
-                      placeholder="you@email.com"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#1a3c8f] min-h-[48px]"
-                    />
-                  </div>
-                </div>
-
-                <p className="text-xs text-gray-500 text-center">
-                  Your card will be charged <strong>{amtStr}</strong>. Admin will verify and activate your plan within 2-3 minutes.
-                </p>
-
-                <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
-                  <div className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" /> SSL Secured</div>
-                  <div className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> Stripe Powered</div>
-                </div>
-              </div>
-
-              <div className="px-5 pb-5 flex-shrink-0 border-t border-gray-100 pt-4">
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleCardSubmit}
-                  disabled={cardLoading}
-                  className="w-full bg-gradient-to-r from-[#0d1b4b] to-[#1a3c8f] text-white font-bold py-4 rounded-xl text-sm disabled:opacity-60 flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                >
-                  {cardLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" />Processing…</>
-                  ) : (
-                    <><CreditCard className="w-4 h-4" />Pay {amtStr} Securely</>
-                  )}
-                </motion.button>
-              </div>
-            </>
-          )}
+          {/* Credit-card payments are handled by Stripe's hosted Checkout page —
+              selecting "Credit / Debit Card" redirects there via startStripeCheckout(). */}
 
           {/* ── BANK TRANSFER ───────────────────────────────────────────────────── */}
           {step === "bank_form" && (

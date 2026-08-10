@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   BookOpen, FileText, Video, Lightbulb, GraduationCap, Globe,
   Wrench, Download, Search, Star, Lock, Unlock, ShoppingCart,
-  X, CreditCard, CheckCircle2, Eye, ChevronRight, Loader2
+  X, CheckCircle2, Eye, ChevronRight, Loader2
 } from "lucide-react";
 import { resourcesApi } from "@/lib/api";
 import { insforge } from "@/lib/insforge";
@@ -49,41 +49,43 @@ const POPULAR = [
   "Personal Statement Samples & Writing Guide",
 ];
 
-/* ── Payment Modal ── */
+/* ── Payment Modal (Stripe hosted checkout) ── */
 function PaymentModal({
   resource,
   onClose,
-  onSuccess,
 }: {
   resource: Resource;
   onClose: () => void;
-  onSuccess: () => void;
 }) {
   const { user } = useAuth();
-  const [step, setStep] = useState<"confirm" | "pay" | "success">("confirm");
-  const [processing, setProcessing] = useState(false);
-  const [cardData, setCardData] = useState({ number: "", expiry: "", cvv: "", name: "" });
+  const [redirecting, setRedirecting] = useState(false);
 
-  const handlePay = async () => {
+  // Redirect to Stripe's hosted checkout. Card details are entered on Stripe —
+  // never in this app — and access is granted by the webhook after payment.
+  const startCheckout = async () => {
     if (!user) { toast.error("Please log in to purchase."); return; }
-    setProcessing(true);
+    setRedirecting(true);
     try {
-      // Record purchase in database (Stripe integration connects here)
-      const { error } = await insforge.database.from("purchases").insert([{
-        user_id: user.id,
-        resource_id: resource.id,
-        amount: resource.price,
-        currency: resource.currency,
-        payment_method: "card",
-        payment_status: "completed", // Will be set by Stripe webhook in production
-      }]);
-      if (error && !error.message?.includes("duplicate")) throw error;
-      setStep("success");
-      setTimeout(() => { onSuccess(); onClose(); }, 1800);
-    } catch (err: any) {
-      toast.error("Payment failed. Please try again.");
-    } finally {
-      setProcessing(false);
+      const res = await fetch("/api/payments/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          paymentType: "resource_purchase",
+          itemType: "digital_resource",
+          itemId: resource.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        toast.error(data.error || "Could not start checkout.");
+        setRedirecting(false);
+        return;
+      }
+      window.location.href = data.url; // hand off to Stripe
+    } catch {
+      toast.error("Could not reach the payment service.");
+      setRedirecting(false);
     }
   };
 
@@ -103,115 +105,59 @@ function PaymentModal({
           transition={{ type: "spring", stiffness: 280, damping: 24 }}
           className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
         >
-          {step === "success" ? (
-            <div className="p-8 text-center">
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
-                <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              </motion.div>
-              <h2 className="text-xl font-extrabold text-gray-900 mb-2">Purchase Successful!</h2>
-              <p className="text-gray-500 text-sm">You now have access to <strong>{resource.title}</strong>.</p>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="font-bold text-gray-900">Purchase Resource</h2>
+            <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="p-5">
+            {/* Resource card */}
+            <div className="bg-blue-50 rounded-xl p-4 mb-5 flex gap-3">
+              <div className="w-10 h-10 bg-[#1a3c8f] rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 text-sm line-clamp-2">{resource.title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{resource.category}</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-xl font-extrabold text-[#1a3c8f]">
+                  {resource.currency === "USD" ? "$" : resource.currency}{resource.price.toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-400">one-time</p>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="font-bold text-gray-900">{step === "confirm" ? "Purchase Resource" : "Payment Details"}</h2>
-                <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              <div className="p-5">
-                {/* Resource card */}
-                <div className="bg-blue-50 rounded-xl p-4 mb-5 flex gap-3">
-                  <div className="w-10 h-10 bg-[#1a3c8f] rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm line-clamp-2">{resource.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{resource.category}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xl font-extrabold text-[#1a3c8f]">
-                      {resource.currency === "USD" ? "$" : resource.currency}{resource.price.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-gray-400">one-time</p>
-                  </div>
+            <p className="text-sm text-gray-600 mb-5 leading-relaxed">{resource.description}</p>
+            <div className="space-y-2 mb-5">
+              {["Instant access after payment", "Unlimited downloads", "Secure checkout via Stripe"].map(b => (
+                <div key={b} className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  {b}
                 </div>
+              ))}
+            </div>
 
-                {step === "confirm" && (
-                  <>
-                    <p className="text-sm text-gray-600 mb-5 leading-relaxed">{resource.description}</p>
-                    <div className="space-y-2 mb-5">
-                      {["Instant access after payment", "Unlimited downloads", "30-day money-back guarantee"].map(b => (
-                        <div key={b} className="flex items-center gap-2 text-sm text-gray-600">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-                          {b}
-                        </div>
-                      ))}
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                      onClick={() => setStep("pay")}
-                      className="w-full bg-[#1a3c8f] text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ShoppingCart className="w-4 h-4" />
-                      Proceed to Payment
-                    </motion.button>
-                  </>
-                )}
+            <motion.button
+              whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+              onClick={startCheckout}
+              disabled={redirecting}
+              className="w-full bg-[#1a3c8f] text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+            >
+              {redirecting
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Redirecting to Stripe…</>
+                : <><ShoppingCart className="w-4 h-4" />Pay {resource.currency === "USD" ? "$" : ""}{resource.price.toFixed(2)} with Card</>
+              }
+            </motion.button>
 
-                {step === "pay" && (
-                  <>
-                    <div className="space-y-3 mb-5">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-600 block mb-1">Cardholder Name</label>
-                        <input value={cardData.name} onChange={e => setCardData(d => ({ ...d, name: e.target.value }))} placeholder="John Doe" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f]" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-semibold text-gray-600 block mb-1">Card Number</label>
-                        <div className="relative">
-                          <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            value={cardData.number}
-                            onChange={e => setCardData(d => ({ ...d, number: e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})/g, "$1 ").trim() }))}
-                            placeholder="1234 5678 9012 3456"
-                            className="w-full pl-9 pr-4 border border-gray-200 rounded-xl py-2.5 text-sm font-mono focus:outline-none focus:border-[#1a3c8f] tracking-wider"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">Expiry (MM/YY)</label>
-                          <input value={cardData.expiry} onChange={e => setCardData(d => ({ ...d, expiry: e.target.value }))} placeholder="12/27" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f]" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-semibold text-gray-600 block mb-1">CVV</label>
-                          <input type="password" value={cardData.cvv} onChange={e => setCardData(d => ({ ...d, cvv: e.target.value.slice(0, 3) }))} placeholder="•••" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#1a3c8f]" maxLength={3} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
-                      <Lock className="w-3.5 h-3.5" />
-                      Secured by Stripe · 256-bit SSL encryption
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                      onClick={handlePay}
-                      disabled={processing}
-                      className="w-full bg-[#1a3c8f] text-white font-bold py-3.5 rounded-xl hover:bg-blue-900 disabled:opacity-60 flex items-center justify-center gap-2"
-                    >
-                      {processing
-                        ? <><Loader2 className="w-4 h-4 animate-spin" />Processing…</>
-                        : <><CreditCard className="w-4 h-4" />Pay {resource.currency === "USD" ? "$" : ""}{resource.price.toFixed(2)}</>
-                      }
-                    </motion.button>
-                    <button onClick={() => setStep("confirm")} className="w-full text-xs text-gray-400 hover:text-gray-600 mt-3 text-center">← Back</button>
-                  </>
-                )}
-              </div>
-            </>
-          )}
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-3">
+              <Lock className="w-3.5 h-3.5" />
+              Secured by Stripe · your card details never touch our servers
+            </div>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -259,6 +205,25 @@ export default function ResourcesPage() {
 
   useEffect(() => { fetchResources(); fetchPurchases(); }, [user]);
   useEffect(() => { fetchResources(activeCategory, search); }, [activeCategory]);
+
+  // Handle return from Stripe hosted checkout. Access is granted by the webhook;
+  // we just surface a toast and refresh purchases so the unlock reflects.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("payment");
+    if (status === "success") {
+      toast.success("Payment received! Your resource is being unlocked — refreshing…");
+      // Give the webhook a moment, then refresh the purchased set.
+      setTimeout(() => fetchPurchases(), 2500);
+    } else if (status === "cancelled") {
+      toast("Checkout cancelled — no charge was made.", { icon: "ℹ️" });
+    }
+    if (status) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); fetchResources(activeCategory, search); };
 
@@ -496,10 +461,6 @@ export default function ResourcesPage() {
         <PaymentModal
           resource={payingResource}
           onClose={() => setPayingResource(null)}
-          onSuccess={() => {
-            setPurchases(prev => new Set([...prev, payingResource.id]));
-            toast.success("Purchase successful! You can now access this resource.");
-          }}
         />
       )}
     </div>
