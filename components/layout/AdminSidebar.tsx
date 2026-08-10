@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Briefcase, GraduationCap, BookOpen, Megaphone,
   FolderOpen, MessageSquare, Mail, BarChart3, Settings, Shield, Activity,
   Globe, Menu, X, ChevronDown, ChevronRight, Tag, TrendingUp, ClipboardList,
-  Calendar, Trophy, Gift, Crown, CreditCard, Star, Archive, Brain
+  Calendar, Trophy, Gift, Crown, CreditCard, Star, Archive, Brain, MessageCircle
 } from "lucide-react";
 import { useState } from "react";
 import Logo from "@/components/ui/Logo";
@@ -33,6 +33,7 @@ const menuItems = [
       { label: "Opportunities", href: "/admin/opportunities" },
     ]
   },
+  { label: "Import from WhatsApp", href: "/admin/import", icon: MessageCircle },
   { label: "Campus Updates", href: "/admin/campus-updates", icon: Megaphone },
   { label: "Resources", href: "/admin/resources", icon: FolderOpen },
   { label: "Categories", href: "/admin/categories", icon: Tag },
