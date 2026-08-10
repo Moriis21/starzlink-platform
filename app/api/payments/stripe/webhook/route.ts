@@ -77,7 +77,9 @@ export async function POST(req: NextRequest) {
         plan_type: paymentType === "subscription" ? itemType : null,
         amount,
         currency,
-        payment_method: "stripe",
+        // Must satisfy the payments.payment_method CHECK constraint; "stripe" is
+        // not an allowed value, so record it as a card payment (Stripe = card).
+        payment_method: "credit_card",
         transaction_reference: sessionId,
         payment_status: "verified",
         admin_approval_status: "approved",
