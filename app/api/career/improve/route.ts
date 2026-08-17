@@ -3,7 +3,7 @@ import { insforge } from "@/lib/insforge";
 import { checkProAccess } from "@/lib/checkProAccess";
 export const runtime = "nodejs";
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_MODEL = "openai/gpt-oss-120b";
 
 let _cachedKey: string | null = null;
 async function getGroqKey(): Promise<string> {

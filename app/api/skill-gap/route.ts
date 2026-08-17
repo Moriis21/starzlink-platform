@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_MODEL = "openai/gpt-oss-120b";
 
 async function getGroqKey(): Promise<string> {
   if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;

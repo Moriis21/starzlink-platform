@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const MAX_TOKENS = 280; // Short, focused replies
 
 // Fetch Groq API key from InsForge settings DB at runtime — no secrets in code
