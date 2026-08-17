@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { checkProAccess } from "@/lib/checkProAccess";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
+
+    const rl = rateLimit(req, { key: "career-linkedin", limit: 20, windowMs: 60_000, identifier: userId });
+    if (!rl.ok) return tooManyRequests(rl);
 
     // Pro check
     const isPro = await checkProAccess(userId);

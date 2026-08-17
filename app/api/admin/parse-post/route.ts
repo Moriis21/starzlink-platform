@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -101,6 +102,9 @@ export async function POST(req: NextRequest) {
     if (!text || typeof text !== "string" || text.trim().length < 10) {
       return NextResponse.json({ error: "Please paste the full post text (at least a few words)." }, { status: 400 });
     }
+
+    const rl = rateLimit(req, { key: "parse-post", limit: 30, windowMs: 60_000 });
+    if (!rl.ok) return tooManyRequests(rl);
 
     const groqKey = await getGroqKey();
     if (!groqKey) {

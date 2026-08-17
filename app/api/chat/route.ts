@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const MAX_TOKENS = 280; // Short, focused replies
@@ -120,6 +121,9 @@ export async function POST(req: NextRequest) {
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Invalid messages" }, { status: 400 });
     }
+
+    const rl = rateLimit(req, { key: "chat", limit: 30, windowMs: 60_000 });
+    if (!rl.ok) return tooManyRequests(rl);
 
     const apiKey = await getGroqKey();
     if (!apiKey) {

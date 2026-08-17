@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 async function getGroqKey(): Promise<string> {
   if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
   try {
     const { opportunityId, opportunityType, opportunityTitle, opportunityData, userProfile } = await req.json();
     if (!opportunityId || !userProfile) return NextResponse.json({ score: 0, label: "Low Match" });
+
+    const rl = rateLimit(req, { key: "match-score", limit: 60, windowMs: 60_000, identifier: userProfile?.id });
+    if (!rl.ok) return tooManyRequests(rl);
 
     // Check cache first
     if (userProfile.id) {

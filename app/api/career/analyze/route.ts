@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 // Force Node.js runtime (not Edge) — required for InsForge SDK fetch calls
 export const runtime = "nodejs";
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
     if (!extractedText || !userId) {
       return NextResponse.json({ error: "Missing CV text or user ID" }, { status: 400 });
     }
+
+    // CV analysis is expensive — tighter per-hour bucket.
+    const rl = rateLimit(req, { key: "career-analyze", limit: 10, windowMs: 60 * 60_000, identifier: userId });
+    if (!rl.ok) return tooManyRequests(rl);
 
     if (!extractedText.trim() || extractedText.trim().length < 50) {
       return NextResponse.json({

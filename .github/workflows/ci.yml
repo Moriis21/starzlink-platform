@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Lint & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        # Non-blocking: repo has pre-existing lint debt. This surfaces new
+        # issues in PR logs without failing the pipeline. Flip to blocking
+        # once the backlog is cleared.
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Build
+        env:
+          # Build must succeed without real secrets — routes read env lazily
+          # and fall back to InsForge settings at runtime.
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+        run: npm run build

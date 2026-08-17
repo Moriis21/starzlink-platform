@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
 
@@ -15,6 +16,9 @@ export async function POST(req: NextRequest) {
   try {
     const { opportunityId, opportunityType, opportunityTitle, requirements, userSkills, userId } = await req.json();
     if (!requirements) return NextResponse.json({ error: "Missing requirements" }, { status: 400 });
+
+    const rl = rateLimit(req, { key: "skill-gap", limit: 20, windowMs: 60_000, identifier: userId });
+    if (!rl.ok) return tooManyRequests(rl);
 
     const groqKey = await getGroqKey();
     if (!groqKey) return NextResponse.json({ error: "AI unavailable" }, { status: 503 });
