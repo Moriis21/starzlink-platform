@@ -2,26 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { checkProAccess } from "@/lib/checkProAccess";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { log } from "@/lib/log";
+import { getGroqKey } from "@/lib/getGroqKey";
+
+const logger = log("career.linkedin");
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-let _cachedKey: string | null = null;
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  if (_cachedKey) return _cachedKey;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    _cachedKey = (data as any)?.value ?? "";
-    return _cachedKey!;
-  } catch {
-    return "";
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,7 +67,7 @@ ${cvText ? `Professional Background / CV:\n${cvText.slice(0, 4000)}` : "No CV pr
 
     if (!groqRes.ok) {
       const errBody = await groqRes.text();
-      console.error("Groq error:", groqRes.status, errBody);
+      logger.error("Groq error:", groqRes.status, errBody);
       return NextResponse.json({ error: "AI failed to optimize profile" }, { status: 500 });
     }
 
@@ -111,15 +98,15 @@ ${cvText ? `Professional Background / CV:\n${cvText.slice(0, 4000)}` : "No CV pr
       .single();
 
     if (reviewError) {
-      console.error("LinkedIn review save error:", reviewError);
+      logger.error("LinkedIn review save error:", reviewError);
     }
 
     return NextResponse.json({
       reviewId: (reviewData as any)?.id ?? null,
       ...result,
     });
-  } catch (err: any) {
-    console.error("LinkedIn API error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    logger.error("LinkedIn API error:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "LinkedIn review failed" }, { status: 500 });
   }
 }

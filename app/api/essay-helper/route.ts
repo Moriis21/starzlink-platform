@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { getGroqKey } from "@/lib/getGroqKey";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  try {
-    const { data } = await insforge.database.from("settings").select("value").eq("key", "groq_api_key").single();
-    return (data as any)?.value ?? "";
-  } catch { return ""; }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -100,8 +93,8 @@ Keep the main points but use completely different wording. Tone: ${tone || "prof
     }
 
     return NextResponse.json({ success: true, essay, wordCount: essay.split(/\s+/).length });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Essay generation failed" }, { status: 500 });
   }
 }
 

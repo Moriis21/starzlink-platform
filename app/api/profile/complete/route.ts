@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("profile.complete");
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Strategy 2: Fallback — SDK via server (if REST fails)
     // We can't use SDK here easily since it needs user context, so return error
     const errText = await upsertRes.text();
-    console.error("Profile complete upsert failed:", upsertRes.status, errText);
+    logger.error("Profile complete upsert failed:", upsertRes.status, errText);
 
     // Try without new columns in case they don't exist yet
     const fallbackPayload = {
@@ -104,7 +107,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
 
   } catch (err: any) {
-    console.error("Profile complete API error:", err);
+    logger.error("Profile complete API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/context/AuthContext";
 import ChatBot from "@/components/ui/ChatBot";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import PWARegister from "@/components/ui/PWARegister";
 import "./globals.css";
 
@@ -98,7 +99,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <AuthProvider>
           {children}
-          <ChatBot />
+          <ErrorBoundary fallback={null}>
+            <ChatBot />
+          </ErrorBoundary>
           <PWARegister />
           <Toaster
             position="top-right"

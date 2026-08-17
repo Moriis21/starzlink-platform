@@ -2,26 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { checkProAccess } from "@/lib/checkProAccess";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { log } from "@/lib/log";
+import { getGroqKey } from "@/lib/getGroqKey";
+
+const logger = log("career.letter");
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-let _cachedKey: string | null = null;
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  if (_cachedKey) return _cachedKey;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    _cachedKey = (data as any)?.value ?? "";
-    return _cachedKey!;
-  } catch {
-    return "";
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -178,15 +165,15 @@ Return ONLY the improved letter. No explanations.\n\n${letterContent}`,
       .single();
 
     if (letterError) {
-      console.error("Letter save error:", letterError);
+      logger.error("Letter save error:", letterError);
     }
 
     return NextResponse.json({
       letterId: (letterData as any)?.id ?? null,
       content: letterContent,
     });
-  } catch (err: any) {
-    console.error("Letter API error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    logger.error("Letter API error:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Letter generation failed" }, { status: 500 });
   }
 }

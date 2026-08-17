@@ -1,27 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { log } from "@/lib/log";
+import { getGroqKey } from "@/lib/getGroqKey";
+
+const logger = log("chat");
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
 const MAX_TOKENS = 280; // Short, focused replies
-
-// Fetch Groq API key from InsForge settings DB at runtime — no secrets in code
-let _cachedKey: string | null = null;
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  if (_cachedKey) return _cachedKey;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    _cachedKey = (data as any)?.value ?? "";
-    return _cachedKey!;
-  } catch {
-    return "";
-  }
-}
 
 // ── Concise StarzLink knowledge base ──────────────────────────────────────────
 const SYSTEM_PROMPT = `You are the StarzLink Assistant — a friendly, sharp career guide for StarzLink, Liberia's #1 opportunity platform.
@@ -135,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     const groqMessages = [
       { role: "system", content: systemContent },
-      ...messages.slice(-14).map((m: any) => ({ role: m.role, content: m.content })),
+      ...messages.slice(-14).map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
     ];
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -149,27 +134,63 @@ export async function POST(req: NextRequest) {
         messages: groqMessages,
         temperature: 0.55,
         max_tokens: MAX_TOKENS,
-        stream: false,
+        stream: true,
         top_p: 0.85,
       }),
     });
 
-    if (!groqRes.ok) {
-      const errBody = await groqRes.text();
-      console.error("Groq error:", groqRes.status, errBody);
-      return NextResponse.json({ error: `Groq ${groqRes.status}` }, { status: 500 });
+    if (!groqRes.ok || !groqRes.body) {
+      const errBody = await groqRes.text().catch(() => "");
+      logger.error("Groq error:", groqRes.status, errBody);
+      return NextResponse.json({ error: `Groq ${groqRes.status}` }, { status: 502 });
     }
 
-    const data = await groqRes.json();
-    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    // Pipe the OpenAI-format SSE from Groq into plain text chunks so the
+    // client can just concatenate reads. Keeps the wire format simple.
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const upstream = groqRes.body.getReader();
 
-    if (!content) {
-      return NextResponse.json({ error: "Empty response" }, { status: 500 });
-    }
+    const stream = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        const { done, value } = await upstream.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        const chunk = decoder.decode(value, { stream: true });
+        // Each SSE frame: "data: {json}\n\n" (or "data: [DONE]").
+        for (const line of chunk.split("\n")) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(payload) as {
+              choices?: Array<{ delta?: { content?: string } }>;
+            };
+            const token = parsed.choices?.[0]?.delta?.content;
+            if (token) controller.enqueue(encoder.encode(token));
+          } catch {
+            // partial frame — Groq occasionally splits mid-JSON; skip and continue
+          }
+        }
+      },
+      cancel() {
+        upstream.cancel().catch(() => { /* nothing to do */ });
+      },
+    });
 
-    return NextResponse.json({ content });
-  } catch (err: any) {
-    console.error("Chat API error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  } catch (err) {
+    logger.error("Chat API error:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("user.update-profile");
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -135,7 +138,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update profile. Please try again." }, { status: 500 });
 
   } catch (err: any) {
-    console.error("update-profile error:", err);
+    logger.error("update-profile error:", err);
     return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
   }
 }

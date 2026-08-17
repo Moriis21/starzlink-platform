@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("admin.cleanup");
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -69,7 +72,7 @@ async function expireTable(table: string, authKey: string): Promise<number> {
       } catch { return 0; }
     }
   } catch (e: any) {
-    console.error(`Expire ${table} error:`, e.message);
+    logger.error(`Expire ${table} error:`, e.message);
     return 0;
   }
 }

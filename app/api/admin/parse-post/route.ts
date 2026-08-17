@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { insforge } from "@/lib/insforge";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { getGroqKey } from "@/lib/getGroqKey";
 
 export const runtime = "nodejs";
 
@@ -12,19 +12,6 @@ export const runtime = "nodejs";
  * pasted in manually by an admin — this route only handles the parsing step.
  */
 
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    return (data as any)?.value ?? "";
-  } catch {
-    return "";
-  }
-}
 
 // Field schema per category — mirrors the admin "new" forms / InsForge tables.
 const CATEGORY_FIELDS: Record<string, string[]> = {
@@ -153,7 +140,7 @@ export async function POST(req: NextRequest) {
     const confidence = Math.max(0, Math.min(100, Number(parsed.confidence ?? 0)));
 
     return NextResponse.json({ category, confidence, fields });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message ?? "Failed to parse post." }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to parse post." }, { status: 500 });
   }
 }

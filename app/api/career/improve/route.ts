@@ -2,26 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { checkProAccess } from "@/lib/checkProAccess";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { log } from "@/lib/log";
+import { getGroqKey } from "@/lib/getGroqKey";
+
+const logger = log("career.improve");
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-let _cachedKey: string | null = null;
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  if (_cachedKey) return _cachedKey;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    _cachedKey = (data as any)?.value ?? "";
-    return _cachedKey!;
-  } catch {
-    return "";
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -155,7 +142,7 @@ SKILLS
 
     if (!groqRes.ok) {
       const errBody = await groqRes.text();
-      console.error("Groq error:", groqRes.status, errBody);
+      logger.error("Groq error:", groqRes.status, errBody);
       return NextResponse.json({ error: "AI improvement failed" }, { status: 500 });
     }
 
@@ -186,8 +173,8 @@ SKILLS
       improvedCvId: (improvedData as any).id,
       content: improvedContent,
     });
-  } catch (err: any) {
-    console.error("Improve API error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    logger.error("Improve API error:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "CV improvement failed" }, { status: 500 });
   }
 }

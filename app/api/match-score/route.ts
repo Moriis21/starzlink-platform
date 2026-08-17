@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
-
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  try {
-    const { data } = await insforge.database.from("settings").select("value").eq("key", "groq_api_key").single();
-    return (data as any)?.value ?? "";
-  } catch { return ""; }
-}
+import { getGroqKey } from "@/lib/getGroqKey";
 
 export async function POST(req: NextRequest) {
   try {
@@ -112,7 +105,7 @@ Only return valid JSON.`;
     }
 
     return NextResponse.json({ score: result.score, label: result.label, breakdown: result.breakdown });
-  } catch (err: any) {
+  } catch {
     return NextResponse.json({ score: 0, label: "Low Match" });
   }
 }

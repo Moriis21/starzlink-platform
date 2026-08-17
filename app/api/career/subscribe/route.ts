@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("career.subscribe");
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, subscription });
   } catch (err: any) {
-    console.error("Subscribe API error:", err);
+    logger.error("Subscribe API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

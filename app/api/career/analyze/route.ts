@@ -1,28 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
+import { log } from "@/lib/log";
+import { getGroqKey } from "@/lib/getGroqKey";
+
+const logger = log("career.analyze");
 
 // Force Node.js runtime (not Edge) — required for InsForge SDK fetch calls
 export const runtime = "nodejs";
 
 const GROQ_MODEL = "openai/gpt-oss-120b";
-
-let _cachedKey: string | null = null;
-async function getGroqKey(): Promise<string> {
-  if (process.env.GROQ_API_KEY) return process.env.GROQ_API_KEY;
-  if (_cachedKey) return _cachedKey;
-  try {
-    const { data } = await insforge.database
-      .from("settings")
-      .select("value")
-      .eq("key", "groq_api_key")
-      .single();
-    _cachedKey = (data as any)?.value ?? "";
-    return _cachedKey!;
-  } catch {
-    return "";
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -123,7 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (uploadError || !uploadData) {
-      console.error("Upload record error:", uploadError);
+      logger.error("Upload record error:", uploadError);
       return NextResponse.json({ error: "Failed to save upload record" }, { status: 500 });
     }
 
@@ -223,7 +210,7 @@ ${isReUpload ? `NOTE: This appears to be an updated/improved version of a previo
 
     if (!groqRes.ok) {
       const errBody = await groqRes.text();
-      console.error("Groq error:", groqRes.status, errBody);
+      logger.error("Groq error:", groqRes.status, errBody);
       await insforge.database.from("cv_uploads").update({ status: "failed" }).eq("id", uploadId);
       return NextResponse.json({ error: "AI analysis failed. Please try again." }, { status: 500 });
     }
@@ -242,7 +229,7 @@ ${isReUpload ? `NOTE: This appears to be an updated/improved version of a previo
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       analysis = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
     } catch (parseErr) {
-      console.error("JSON parse error:", parseErr, "Raw:", rawResponse.slice(0, 500));
+      logger.error("JSON parse error:", parseErr, "Raw:", rawResponse.slice(0, 500));
       // Use safe fallback — don't fail the request
       analysis = {
         overall_score: 60,
@@ -306,7 +293,7 @@ ${isReUpload ? `NOTE: This appears to be an updated/improved version of a previo
     }
 
     if (analysisError || !analysisData) {
-      console.error("Analysis save error:", analysisError);
+      logger.error("Analysis save error:", analysisError);
       await insforge.database.from("cv_uploads").update({ status: "failed" }).eq("id", uploadId);
       return NextResponse.json({ error: "Failed to save analysis results" }, { status: 500 });
     }
@@ -343,8 +330,8 @@ ${isReUpload ? `NOTE: This appears to be an updated/improved version of a previo
       isReUpload,
       previousScore: prevScore,
     });
-  } catch (err: any) {
-    console.error("Analyze API error:", err);
-    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
+  } catch (err) {
+    logger.error("Analyze API error:", err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal server error" }, { status: 500 });
   }
 }

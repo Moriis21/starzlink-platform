@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("admin.users");
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -78,7 +81,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
       }
     }
   } catch (e) {
-    console.error("Auth admin users fetch failed:", e);
+    logger.error("Auth admin users fetch failed:", e);
   }
 
   // Strategy 2: Direct REST API on profiles table with service key
@@ -106,7 +109,7 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
       return { users: Array.isArray(users) ? users : [], total };
     }
   } catch (e) {
-    console.error("REST profiles fetch failed:", e);
+    logger.error("REST profiles fetch failed:", e);
   }
 
   // Strategy 3: InsForge SDK (limited by RLS — returns only current user's row)
@@ -147,7 +150,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ users, total });
   } catch (err: any) {
-    console.error("Admin users API error:", err);
+    logger.error("Admin users API error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { log } from "@/lib/log";
 export const runtime = "nodejs";
+
+const logger = log("admin.payments");
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
 const ANON_KEY = "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -80,7 +83,7 @@ export async function GET(req: NextRequest) {
 
     const { data: payments, error, count } = await q;
     if (error) {
-      console.error("Payments fetch error:", error);
+      logger.error("Payments fetch error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -123,7 +126,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ payments: merged, total: count ?? 0 });
   } catch (err: any) {
-    console.error("Admin payments GET error:", err);
+    logger.error("Admin payments GET error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -204,7 +207,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err: any) {
-    console.error("Admin payments POST error:", err);
+    logger.error("Admin payments POST error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
