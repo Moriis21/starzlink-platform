@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,10 @@ async function writeSetting(key: string, value: string) {
     .upsert([{ key, value, updated_at: new Date().toISOString() }], { onConflict: "key" });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const check = await requireAdmin(req, new URL(req.url).searchParams.get("adminId"));
+  if (!check.ok) return check.response;
+
   const [secret, webhook] = await Promise.all([readSetting(SECRET_KEY), readSetting(WEBHOOK_KEY)]);
   return NextResponse.json({
     hasSecretKey: Boolean(secret),
@@ -46,6 +50,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const check = await requireAdmin(req);
+    if (!check.ok) return check.response;
+
     const { secretKey, webhookSecret } = await req.json();
     const updates: Promise<void>[] = [];
 

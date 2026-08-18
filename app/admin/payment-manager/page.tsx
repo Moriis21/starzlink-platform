@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { insforge } from "@/lib/insforge";
 import { useAuth } from "@/context/AuthContext";
 import { formatDate, cn } from "@/lib/utils";
+import { adminFetch } from "@/lib/adminFetch";
 import toast from "react-hot-toast";
 import {
   CreditCard, CheckCircle, XCircle, Eye, Search, Loader2,
@@ -75,7 +76,7 @@ export default function PaymentManagerPage() {
     try {
       const params = new URLSearchParams({ status: tab, limit: "20" });
       if (search) params.set("search", search);
-      const res = await fetch(`/api/admin/payments?${params}`);
+      const res = await adminFetch(`/api/admin/payments?${params}`);
       const data = await res.json();
       setPayments(data.payments ?? []);
       setTotal(data.total ?? 0);
@@ -103,7 +104,7 @@ export default function PaymentManagerPage() {
   const handleApprove = async (payment: Payment) => {
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await adminFetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve", paymentId: payment.id, adminId: user?.id }),
@@ -121,7 +122,7 @@ export default function PaymentManagerPage() {
   const handleReject = async (payment: Payment) => {
     setActionLoading(true);
     try {
-      const res = await fetch("/api/admin/payments", {
+      const res = await adminFetch("/api/admin/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reject", paymentId: payment.id, adminId: user?.id, rejectionReason: rejectNote }),

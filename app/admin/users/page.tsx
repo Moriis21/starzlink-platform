@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { insforge } from "@/lib/insforge";
+import { adminFetch } from "@/lib/adminFetch";
 import Link from "next/link";
 import { formatDate, cn } from "@/lib/utils";
 import {
@@ -57,7 +58,7 @@ export default function AdminUsersPage() {
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (profileFilter !== "all") params.set("profile", profileFilter);
 
-      const res = await fetch(`/api/admin/users?${params}`);
+      const res = await adminFetch(`/api/admin/users?${params}`);
       const data = await res.json();
       setUsers(data.users ?? []);
       setTotal(data.total ?? 0);

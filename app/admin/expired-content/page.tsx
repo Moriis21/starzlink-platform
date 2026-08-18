@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { formatDate, cn } from "@/lib/utils";
+import { adminFetch } from "@/lib/adminFetch";
 import toast from "react-hot-toast";
 import {
   Archive, RefreshCw, Trash2, RotateCcw, Calendar, Search,
@@ -50,7 +51,7 @@ export default function ExpiredContentPage() {
     try {
       const params = new URLSearchParams({ type: typeFilter, status: statusTab });
       if (search) params.set("search", search);
-      const res = await fetch(`/api/admin/expired?${params}`);
+      const res = await adminFetch(`/api/admin/expired?${params}`);
       const data = await res.json();
       setRecords(data.records ?? []);
       setStats(data.stats ?? {});
@@ -64,7 +65,7 @@ export default function ExpiredContentPage() {
     setCleaning(true);
     setCleanupResult(null);
     try {
-      const res = await fetch("/api/admin/cleanup", { method: "POST" });
+      const res = await adminFetch("/api/admin/cleanup", { method: "POST" });
       const data = await res.json();
       setCleanupResult(data.message);
       toast.success(data.message);
@@ -84,7 +85,7 @@ export default function ExpiredContentPage() {
       if (modal === "extend" || modal === "restore") body.newDeadline = newDeadline || undefined;
       if (modal === "extend") body.reason = extendReason;
 
-      const res = await fetch("/api/admin/expired", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const res = await adminFetch("/api/admin/expired", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 

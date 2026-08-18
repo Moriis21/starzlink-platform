@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { settingsApi } from "@/lib/api";
+import { adminFetch } from "@/lib/adminFetch";
 import { Save, Globe, MessageCircle, Link as LinkIcon, CreditCard, CheckCircle2, ShieldAlert } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -34,7 +35,7 @@ export default function AdminSettingsPage() {
 
   const loadStripeStatus = async () => {
     try {
-      const res = await fetch("/api/admin/stripe-keys");
+      const res = await adminFetch("/api/admin/stripe-keys");
       if (res.ok) setStripeStatus(await res.json());
     } catch { /* non-blocking */ }
   };
@@ -57,7 +58,7 @@ export default function AdminSettingsPage() {
     }
     setStripeSaving(true);
     try {
-      const res = await fetch("/api/admin/stripe-keys", {
+      const res = await adminFetch("/api/admin/stripe-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(stripe),

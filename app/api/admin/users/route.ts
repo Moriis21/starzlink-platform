@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { log } from "@/lib/log";
+import { requireAdmin } from "@/lib/requireAdmin";
 export const runtime = "nodejs";
 
 const logger = log("admin.users");
@@ -132,6 +133,9 @@ async function fetchAllUsers(search: string, page: number, limit: number) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const check = await requireAdmin(req, searchParams.get("adminId"));
+    if (!check.ok) return check.response;
+
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const limit = Math.min(50, Number(searchParams.get("limit") || 15));
     const search = searchParams.get("search") || "";

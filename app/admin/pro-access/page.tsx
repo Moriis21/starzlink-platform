@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { insforge } from "@/lib/insforge";
+import { adminFetch } from "@/lib/adminFetch";
 import {
   Crown,
   Search,
@@ -209,7 +210,7 @@ function GrantModal({
         payload.durationDays = duration;
       }
 
-      const res = await fetch("/api/admin/pro-access", {
+      const res = await adminFetch("/api/admin/pro-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -425,7 +426,7 @@ export default function ProAccessPage() {
     const params = new URLSearchParams({ limit: "50" });
     if (q) params.set("search", q);
     try {
-      const res = await fetch(`/api/admin/pro-access?${params}`);
+      const res = await adminFetch(`/api/admin/pro-access?${params}`);
       const data = await res.json();
       setUsers(data.users ?? []);
     } catch {
@@ -463,7 +464,7 @@ export default function ProAccessPage() {
   const handleRevoke = async (targetUser: UserRow) => {
     if (!user?.id) return;
     try {
-      const res = await fetch("/api/admin/pro-access", {
+      const res = await adminFetch("/api/admin/pro-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -627,7 +628,7 @@ export default function ProAccessPage() {
                   if (!user?.id) return;
                   if (!confirm(`Revoke Pro access for ${selected.size} users?`)) return;
                   try {
-                    const res = await fetch("/api/admin/pro-access", {
+                    const res = await adminFetch("/api/admin/pro-access", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({

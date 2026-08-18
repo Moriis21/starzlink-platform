@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { requireAdmin } from "@/lib/requireAdmin";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const check = await requireAdmin(req, searchParams.get("adminId"));
+    if (!check.ok) return check.response;
+
     const search = searchParams.get("search") ?? "";
     const limit = Number(searchParams.get("limit") ?? 20);
 
@@ -31,7 +35,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, userIds, adminId, planType, durationDays, expiryDate, note } = body;
 
-    if (!action || !userIds?.length || !adminId) {
+    const check = await requireAdmin(req, adminId);
+    if (!check.ok) return check.response;
+    const verifiedAdminId = check.user.id;
+
+    if (!action || !userIds?.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -62,7 +70,7 @@ export async function POST(req: NextRequest) {
         // Create new grant
         const { data: newGrant } = await insforge.database.from("admin_pro_grants").insert([{
           user_id: userId,
-          granted_by_admin_id: adminId,
+          granted_by_admin_id: verifiedAdminId,
           plan_type: planType === "pro_lifetime" ? "pro_lifetime" : "pro_manual",
           access_type: planType === "pro_lifetime" ? "lifetime" : "manual",
           start_date: new Date().toISOString(),
@@ -73,7 +81,7 @@ export async function POST(req: NextRequest) {
 
         // Audit log
         await insforge.database.from("pro_access_audit_logs").insert([{
-          admin_id: adminId,
+          admin_id: verifiedAdminId,
           user_id: userId,
           action: action,
           old_plan: (currentGrant as any)?.plan_type ?? "free",
@@ -91,7 +99,7 @@ export async function POST(req: NextRequest) {
           .eq("user_id", userId).eq("is_active", true);
 
         await insforge.database.from("pro_access_audit_logs").insert([{
-          admin_id: adminId,
+          admin_id: verifiedAdminId,
           user_id: userId,
           action: "revoke",
           old_plan: (currentGrant as any)?.plan_type ?? "pro_manual",

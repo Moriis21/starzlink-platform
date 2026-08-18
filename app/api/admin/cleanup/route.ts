@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { log } from "@/lib/log";
+import { requireAdmin } from "@/lib/requireAdmin";
 export const runtime = "nodejs";
 
 const logger = log("admin.cleanup");
@@ -79,6 +80,9 @@ async function expireTable(table: string, authKey: string): Promise<number> {
 
 export async function POST(req: NextRequest) {
   try {
+    const check = await requireAdmin(req);
+    if (!check.ok) return check.response;
+
     const authKey = process.env.INSFORGE_SERVICE_KEY || ANON_KEY;
     const results: Record<string, number> = {};
 

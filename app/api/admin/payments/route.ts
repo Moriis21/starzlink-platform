@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
 import { log } from "@/lib/log";
+import { requireAdmin } from "@/lib/requireAdmin";
 export const runtime = "nodejs";
 
 const logger = log("admin.payments");
@@ -61,6 +62,9 @@ async function fetchProfilesByIds(ids: string[]): Promise<Record<string, any>> {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const check = await requireAdmin(req, searchParams.get("adminId"));
+    if (!check.ok) return check.response;
+
     const status = searchParams.get("status") || "pending";
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const search = searchParams.get("search") || "";
@@ -136,7 +140,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, paymentId, adminId, rejectionReason } = body;
 
-    if (!action || !paymentId || !adminId) {
+    const check = await requireAdmin(req, adminId);
+    if (!check.ok) return check.response;
+    const verifiedAdminId = check.user.id;
+
+    if (!action || !paymentId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -153,7 +161,7 @@ export async function POST(req: NextRequest) {
       await insforge.database.from("payments").update({
         admin_approval_status: "approved",
         payment_status: "verified",
-        approved_by_admin_id: adminId,
+        approved_by_admin_id: verifiedAdminId,
         approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }).eq("id", paymentId);
@@ -180,7 +188,7 @@ export async function POST(req: NextRequest) {
       if (p.payment_type === "resource_purchase") {
         await insforge.database.from("resource_purchases").update({
           access_status: "unlocked",
-          approved_by_admin_id: adminId,
+          approved_by_admin_id: verifiedAdminId,
           approved_at: new Date().toISOString(),
         }).eq("payment_id", paymentId);
       }
@@ -191,7 +199,7 @@ export async function POST(req: NextRequest) {
       await insforge.database.from("payments").update({
         admin_approval_status: "rejected",
         payment_status: "rejected",
-        rejected_by_admin_id: adminId,
+        rejected_by_admin_id: verifiedAdminId,
         rejected_at: new Date().toISOString(),
         rejection_reason: rejectionReason || "Payment could not be verified.",
         updated_at: new Date().toISOString(),

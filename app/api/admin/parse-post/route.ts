@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { getGroqKey } from "@/lib/getGroqKey";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const runtime = "nodejs";
 
@@ -85,6 +86,9 @@ function sanitize(category: string, fields: Record<string, any>): Record<string,
 
 export async function POST(req: NextRequest) {
   try {
+    const check = await requireAdmin(req);
+    if (!check.ok) return check.response;
+
     const { text } = await req.json();
     if (!text || typeof text !== "string" || text.trim().length < 10) {
       return NextResponse.json({ error: "Please paste the full post text (at least a few words)." }, { status: 400 });

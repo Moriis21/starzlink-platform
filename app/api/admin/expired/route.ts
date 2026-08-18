@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { requireAdmin } from "@/lib/requireAdmin";
 export const runtime = "nodejs";
 
 const INSFORGE_URL = "https://8qn72bza.us-east.insforge.app";
@@ -76,6 +77,9 @@ async function countExpiredInTable(table: Table, authKey: string): Promise<numbe
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const check = await requireAdmin(req, searchParams.get("adminId"));
+    if (!check.ok) return check.response;
+
     const contentType = searchParams.get("type") || "all";
     const status = searchParams.get("status") || "expired";
     const search = searchParams.get("search") || "";
@@ -115,6 +119,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const check = await requireAdmin(req);
+    if (!check.ok) return check.response;
+
     const { action, id, table, newDeadline, reason } = await req.json();
     if (!action || !id || !table) {
       return NextResponse.json({ error: "Missing action, id, or table" }, { status: 400 });

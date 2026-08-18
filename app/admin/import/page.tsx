@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { Sparkles, Loader2, Save, ChevronLeft, ClipboardPaste, MessageCircle } from "lucide-react";
 import { scholarshipsApi, jobsApi, trainingsApi, campusApi, opportunitiesApi } from "@/lib/api";
+import { adminFetch } from "@/lib/adminFetch";
 
 // ── Field configuration (mirrors app/api/admin/parse-post + the "new" forms) ──
 type FieldType = "text" | "textarea" | "date" | "checkbox";
@@ -139,7 +140,7 @@ export default function ImportPage() {
     setParsing(true);
     setConfidence(null);
     try {
-      const res = await fetch("/api/admin/parse-post", {
+      const res = await adminFetch("/api/admin/parse-post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: raw }),

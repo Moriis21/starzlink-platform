@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { adminFetch } from "@/lib/adminFetch";
 import { TrendingUp, Eye, Bookmark, ExternalLink, Search, Users, BarChart2, Loader2, RefreshCw } from "lucide-react";
 
 const PERIODS = [{ value: "1d", label: "Today" }, { value: "7d", label: "7 Days" }, { value: "30d", label: "30 Days" }];
@@ -15,7 +16,7 @@ export default function ActivityDashboardPage() {
 
   const load = async () => {
     setLoading(true);
-    const res = await fetch(`/api/admin/activity-dashboard?period=${period}&type=${type}`);
+    const res = await adminFetch(`/api/admin/activity-dashboard?period=${period}&type=${type}`);
     const json = await res.json();
     setData(json);
     setLoading(false);

@@ -30,6 +30,9 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
+      - name: Test
+        run: npm test
+
       - name: Build
         env:
           # Build must succeed without real secrets — routes read env lazily

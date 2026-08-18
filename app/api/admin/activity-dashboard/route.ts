@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { insforge } from "@/lib/insforge";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 const BASE = process.env.NEXT_PUBLIC_INSFORGE_URL || "https://8qn72bza.us-east.insforge.app";
 const KEY = process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY || "ik_6d6c0108a931deb33707cad6a802a9ed";
@@ -16,6 +17,9 @@ async function restQuery(table: string, params: Record<string, string>) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const check = await requireAdmin(req, searchParams.get("adminId"));
+    if (!check.ok) return check.response;
+
     const period = searchParams.get("period") || "7d";
     const type = searchParams.get("type") || "all";
 
