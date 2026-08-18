@@ -5,7 +5,9 @@ import { getGroqKey } from "@/lib/getGroqKey";
 
 const logger = log("chat");
 
-const GROQ_MODEL = "openai/gpt-oss-120b";
+// gpt-oss-20b runs ~2x faster than 120b on Groq; plenty for short chat replies.
+// Career tools that need heavier reasoning still use 120b.
+const GROQ_MODEL = "openai/gpt-oss-20b";
 const MAX_TOKENS = 280; // Short, focused replies
 
 // ── Concise StarzLink knowledge base ──────────────────────────────────────────
