@@ -259,7 +259,7 @@ export default function ChatBot() {
                   <p className="text-white font-bold text-sm leading-tight">StarzLink Assistant</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" />
-                    <span className="text-blue-200 text-xs truncate">Online · AI powered by Groq</span>
+                    <span className="text-blue-200 text-xs truncate">Online · StarzLink AI</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
