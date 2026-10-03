@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StarzLink
 
-## Getting Started
+Professional opportunity platform connecting students and professionals with scholarships, jobs, training, campus updates, and career development resources.
 
-First, run the development server:
+Live application: [https://starzlink-platform.vercel.app](https://starzlink-platform.vercel.app)
+
+## Status
+
+Active web application
+
+## Key capabilities
+
+- User registration, profile completion, and email verification
+- Scholarship, job, training, and campus update discovery
+- Saved opportunities and notifications
+- Administrative dashboards and analytics
+- InsForge backend integration
+- Stripe payment and webhook support
+
+## Technology
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- InsForge
+- Framer Motion
+- Recharts
+- Vitest
+
+## Local development
+
+Requirements: Node.js and npm.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Available commands
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | `next dev` |
+| `npm run build` | `next build` |
+| `npm run start` | `next start` |
+| `npm run lint` | `eslint` |
+| `npm run test` | `vitest run` |
+| `npm run test:watch` | `vitest` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configuration
 
-## Learn More
+Copy the provided environment template to a local environment file, then supply values for the variables required by your deployment.
 
-To learn more about Next.js, take a look at the following resources:
+Variables documented in `.env.example`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `FACEBOOK_CLIENT_ID`
+- `FACEBOOK_CLIENT_SECRET`
+- `GROQ_API_KEY`
+- `LINKEDIN_CLIENT_ID`
+- `LINKEDIN_CLIENT_SECRET`
+- `NEXT_PUBLIC_APP_URL`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Never commit production credentials or private keys.
 
-## Deploy on Vercel
+## Project structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Path | Purpose |
+| --- | --- |
+| `.github/` | GitHub workflows and repository automation |
+| `app/` | Application routes and server or client features |
+| `components/` | Reusable user interface components |
+| `context/` | Shared React context providers |
+| `hooks/` | Reusable application hooks |
+| `insforge/` | InsForge backend configuration and functions |
+| `lib/` | Shared libraries and workspace packages |
+| `migrations/` | Database migrations |
+| `public/` | Static assets |
+| `scripts/` | Maintenance and build scripts |
+| `tests/` | Automated tests |
+| `types/` | Shared type definitions |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Security
+
+- Keep credentials and production environment files out of version control.
+- Review authentication, authorization, database policies, and input validation before production use.
+- Run the available lint, type checking, test, and build commands before deployment.
+
+## License
+
+No license file is currently included. All rights are reserved unless the repository owner states otherwise.
+
+## Maintainer
+
+Morris L. Dorley Jr, [@Moriis21](https://github.com/Moriis21)
+
